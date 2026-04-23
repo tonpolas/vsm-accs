@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VSM As-Is — ACCS Aeropuerto de Carga El Dorado</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#0f1117;--bg2:#171b24;--bg3:#1e2330;--bg4:#252a38;
+  --border:#2e3448;--border2:#3d4560;
+  --text:#e8ecf4;--text2:#8892aa;--text3:#4d5670;
+  --blue:#4a9eff;--blue-bg:#0d2040;--blue-dim:#1a3a6e;
+  --amber:#f5a623;--amber-bg:#1f1400;--amber-dim:#3d2a00;
+  --green:#3dba7e;--green-bg:#0a1f14;--green-dim:#133322;
+  --red:#e05555;--red-bg:#1f0a0a;--red-dim:#3d1212;
+  --purple:#8b6fff;--purple-bg:#150d2e;--purple-dim:#2a1a5e;
+  --teal:#2ec4b6;--teal-bg:#091918;--teal-dim:#0e2d2a;
+  --coral:#ff7052;--coral-bg:#1f0d08;--coral-dim:#3d1a10;
+  --radius:6px;--radius-lg:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.logo{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--blue);letter-spacing:.08em}
+.badge-asis{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;font-family:'IBM Plex Mono',monospace;background:var(--blue-dim);color:var(--blue)}
+.tb-btn{font-size:11px;padding:3px 10px;border-radius:var(--radius);border:1px solid var(--border2);cursor:pointer;background:transparent;color:var(--text2);font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
+.tb-btn:hover{background:var(--bg4);color:var(--text)}
+.tb-btn.success{border-color:var(--green-dim);color:var(--green)}
+.tb-btn.danger{border-color:var(--red-dim);color:var(--red)}
+.save-ind{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-left:auto}
+.save-ind.ok{color:var(--green)}
+
+/* MAIN LAYOUT */
+.main{display:flex;flex:1;min-height:0}
+
+/* SIDEBAR */
+.sidebar{width:170px;min-width:170px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sb-section{border-bottom:1px solid var(--border)}
+.sb-head{font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:7px 10px 4px}
+.sym-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:0 7px 7px}
+.sym-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 3px;border-radius:var(--radius);border:1px solid var(--border);cursor:grab;background:var(--bg3);font-size:8.5px;color:var(--text2);user-select:none;transition:all .15s;text-align:center;line-height:1.2}
+.sym-btn:hover{border-color:var(--border2);background:var(--bg4);color:var(--text)}
+.sym-btn svg{pointer-events:none;flex-shrink:0}
+.sh-list{padding:4px 7px 7px;display:flex;flex-direction:column;gap:3px}
+.sh-chip{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);cursor:grab;user-select:none;transition:all .15s}
+.sh-chip:hover{border-color:var(--border2);background:var(--bg4)}
+.sh-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sh-name{font-size:10px;color:var(--text2)}
+.sh-alias{font-size:8px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
+.act-list{padding:4px 7px 7px;display:flex;flex-direction:column;gap:3px}
+.act-item{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);cursor:grab;user-select:none;transition:all .15s}
+.act-item:hover{border-color:var(--border2);background:var(--bg4)}
+.act-badge{font-size:8px;font-weight:600;padding:1px 5px;border-radius:3px;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.act-name{font-size:9.5px;color:var(--text2)}
+.waste-wrap{padding:4px 7px 7px;display:flex;flex-wrap:wrap;gap:3px}
+.waste-tag{font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);cursor:pointer;transition:all .15s;font-family:'IBM Plex Mono',monospace}
+.waste-tag.on{background:var(--red-dim);color:var(--red);border-color:var(--red-dim)}
+
+/* CANVAS AREA */
+.canvas-area{flex:1;display:flex;flex-direction:column;min-width:0}
+.tab-bar{display:flex;align-items:stretch;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{display:flex;align-items:center;gap:6px;padding:0 14px;height:32px;font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;border-right:1px solid var(--border);border-bottom:2px solid transparent;transition:all .15s;user-select:none;white-space:nowrap}
+.tab:hover{color:var(--text2);background:var(--bg3)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--bg)}
+.tab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.tool-row{display:flex;align-items:center;padding:0 10px;gap:5px;margin-left:auto}
+.tool-btn{font-size:11px;padding:3px 8px;border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;background:transparent;color:var(--text2);font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
+.tool-btn:hover{background:var(--bg4);color:var(--text)}
+.tool-btn.active{background:var(--blue-dim);color:var(--blue);border-color:var(--blue-dim)}
+.canvas-wrap{flex:1;overflow:auto;background:var(--bg)}
+#vsm-canvas{display:block;cursor:default}
+.tab-content{flex:1;overflow:auto;background:var(--bg);display:none;flex-direction:column}
+.tab-content.on{display:flex}
+
+/* RIGHT PANEL */
+.rpanel{width:188px;min-width:188px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.rp-sec{padding:10px 11px;border-bottom:1px solid var(--border)}
+.rp-lbl{font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
+.prop-lbl{font-size:9px;color:var(--text3);margin-bottom:2px;margin-top:5px}
+.prop-inp{width:100%;font-size:11px;border:1px solid var(--border2);border-radius:var(--radius);padding:4px 6px;background:var(--bg3);color:var(--text);font-family:'IBM Plex Sans',sans-serif}
+.prop-inp:focus{outline:none;border-color:var(--blue)}
+select.prop-inp option{background:var(--bg3)}
+.note-area{width:100%;font-size:11px;border:1px solid var(--border2);border-radius:var(--radius);padding:6px;background:var(--bg3);color:var(--text);resize:none;line-height:1.5;font-family:'IBM Plex Sans',sans-serif}
+.note-area:focus{outline:none;border-color:var(--blue)}
+.act-btn{width:100%;font-size:11px;padding:5px;border-radius:var(--radius);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;margin-top:4px;transition:all .15s}
+.act-btn.blue{border:1px solid var(--blue-dim);background:var(--blue-bg);color:var(--blue)}
+.act-btn.blue:hover{background:var(--blue-dim)}
+.act-btn.green{border:1px solid var(--green-dim);background:var(--green-bg);color:var(--green)}
+.act-btn.green:hover{background:var(--green-dim)}
+.act-btn.mute{border:1px solid var(--border);background:transparent;color:var(--text3)}
+.act-btn.mute:hover{background:var(--red-bg);color:var(--red);border-color:var(--red-dim)}
+.leg-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.leg-txt{font-size:10px;color:var(--text3)}
+
+/* MAPA */
+.mapa-kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
+.mkpi{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:7px 8px}
+.mkpi-lbl{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace;margin-bottom:2px}
+.mkpi-val{font-size:15px;font-weight:600;font-family:'IBM Plex Mono',monospace}
+.mkpi-sub{font-size:8px;color:var(--text3)}
+.tc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.tc-card{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--bg2)}
+.tc-hd{padding:8px 11px;border-bottom:1px solid var(--border)}
+.tc-title{font-size:13px;font-weight:600;font-family:'IBM Plex Mono',monospace}
+.tc-sub{font-size:9px;color:var(--text3);margin-top:1px}
+.tc-body{padding:8px 11px;display:flex;flex-direction:column;gap:5px}
+.tc-zone{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:var(--radius);border:1px solid var(--border)}
+.tc-zi{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.tc-zn{font-size:10px;font-weight:500;color:var(--text2);flex:1}
+.tc-zs{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
+.tc-docks{display:flex;gap:3px;flex-wrap:wrap;padding:7px 11px;border-top:1px solid var(--border)}
+.dk{width:17px;height:21px;border-radius:3px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:6px;font-family:'IBM Plex Mono',monospace;cursor:default}
+.gate-row{display:flex;gap:8px;margin-bottom:8px}
+.gate-card{flex:1;border:1px solid var(--red-dim);border-radius:var(--radius-lg);background:var(--red-bg);overflow:hidden}
+.gate-hd{background:var(--red);padding:6px 10px;display:flex;align-items:center;justify-content:space-between}
+.gate-hd-nm{font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:#fff}
+.gate-bd{padding:7px 10px;display:flex;flex-direction:column;gap:3px}
+.gate-row-i{display:flex;justify-content:space-between;font-size:10px}
+.gate-k{color:var(--text3)}
+.gate-v{color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:9px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">VSM▸ACCS</span>
+  <span class="badge-asis">As-Is · Estado Actual</span>
+  <div style="width:1px;height:16px;background:var(--border2);margin:0 4px"></div>
+  <button class="tb-btn" onclick="loadTemplate()">Plantilla As-Is</button>
+  <button class="tb-btn success" onclick="saveData()">Guardar</button>
+  <button class="tb-btn success" onclick="exportHTML()">Exportar HTML</button>
+  <button class="tb-btn danger" onclick="clearAll()">Limpiar</button>
+  <span class="save-ind" id="save-ind">sin cambios</span>
+</div>
+
+<div class="main">
+<!-- ─── SIDEBAR ─── -->
+<div class="sidebar">
+
+  <div class="sb-section">
+    <div class="sb-head">Stakeholders</div>
+    <div class="sh-list">
+      <div class="sh-chip" draggable="true" ondragstart="drag(event,'ffwd')"><div class="sh-dot" style="background:#4a9eff"></div><div><div class="sh-name">Freight Forwarder</div><div class="sh-alias">FFWD</div></div></div>
+      <div class="sh-chip" draggable="true" ondragstart="drag(event,'trucker')"><div class="sh-dot" style="background:#f5a623"></div><div><div class="sh-name">Trucker</div><div class="sh-alias">Transportador</div></div></div>
+      <div class="sh-chip" draggable="true" ondragstart="drag(event,'gha')"><div class="sh-dot" style="background:#3dba7e"></div><div><div class="sh-name">GHA</div><div class="sh-alias">Ground Handler</div></div></div>
+      <div class="sh-chip" draggable="true" ondragstart="drag(event,'airline')"><div class="sh-dot" style="background:#8b6fff"></div><div><div class="sh-name">Airline</div><div class="sh-alias">Carrier</div></div></div>
+      <div class="sh-chip" draggable="true" ondragstart="drag(event,'tps')"><div class="sh-dot" style="background:#ff7052"></div><div><div class="sh-name">Aeropuerto</div><div class="sh-alias">TPS User</div></div></div>
+      <div class="sh-chip" draggable="true" ondragstart="drag(event,'customs')"><div class="sh-dot" style="background:#2ec4b6"></div><div><div class="sh-name">Aduana / CB</div><div class="sh-alias">Customs</div></div></div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-head">Procesos físicos</div>
+    <div class="sym-grid">
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'llegada')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="1" y="5" width="20" height="11" rx="3" fill="#1a3a6e" stroke="#4a9eff" stroke-width="1"/><circle cx="5" cy="16" r="2.5" fill="#4a9eff"/><circle cx="17" cy="16" r="2.5" fill="#4a9eff"/><path d="M3 10 L13 6 L23 10" fill="none" stroke="#4a9eff" stroke-width="1"/></svg>Llegada</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'queue')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="1" y="6" width="24" height="8" rx="2" fill="#1f1400" stroke="#f5a623" stroke-width="1"/><rect x="3" y="8" width="4" height="4" rx="1" fill="#f5a623"/><rect x="9" y="8" width="4" height="4" rx="1" fill="#f5a623"/><rect x="15" y="8" width="4" height="4" rx="1" fill="#f5a623" opacity=".5"/><rect x="21" y="8" width="2" height="4" rx="1" fill="#f5a623" opacity=".2"/></svg>Cola</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'turno')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="3" y="2" width="20" height="16" rx="3" fill="#0a1f14" stroke="#3dba7e" stroke-width="1"/><circle cx="13" cy="10" r="5" fill="none" stroke="#3dba7e" stroke-width="1.2"/><path d="M13 6 L13 10 L16 10" stroke="#3dba7e" stroke-width="1.2" stroke-linecap="round"/></svg>Turno</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'slot')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="1" y="3" width="11" height="14" rx="2" fill="#150d2e" stroke="#8b6fff" stroke-width="1"/><rect x="14" y="3" width="11" height="14" rx="2" fill="#150d2e" stroke="#8b6fff" stroke-width="1"/><text x="6.5" y="13" text-anchor="middle" font-size="7" fill="#8b6fff">S1</text><text x="19.5" y="13" text-anchor="middle" font-size="7" fill="#8b6fff">S2</text></svg>Slot</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'docking')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="1" y="8" width="24" height="10" rx="2" fill="#1f0d08" stroke="#ff7052" stroke-width="1"/><path d="M7 8 L7 3 L19 3 L19 8" fill="none" stroke="#ff7052" stroke-width="1"/><rect x="11" y="10" width="4" height="5" fill="#ff7052" opacity=".6"/></svg>Docking</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'descargue')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="7" y="1" width="12" height="9" rx="2" fill="#1f0d08" stroke="#ff7052" stroke-width="1"/><path d="M13 10 L13 18 M9 15 L13 18 L17 15" stroke="#ff7052" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Descargue</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'cargue')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="7" y="10" width="12" height="9" rx="2" fill="#091918" stroke="#2ec4b6" stroke-width="1"/><path d="M13 10 L13 2 M9 5 L13 2 L17 5" stroke="#2ec4b6" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Cargue</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'despacho')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="1" y="4" width="24" height="12" rx="3" fill="#1e2330" stroke="#6b7698" stroke-width="1"/><path d="M5 10 L21 10 M16 6 L21 10 L16 14" stroke="#6b7698" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Despacho</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'salida')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="1" y="4" width="16" height="12" rx="3" fill="#1e2330" stroke="#6b7698" stroke-width="1"/><circle cx="9" cy="10" r="3" fill="none" stroke="#6b7698" stroke-width="1"/><path d="M18 7 L25 10 L18 13" fill="#133322" stroke="#3dba7e" stroke-width="1" stroke-linejoin="round"/><line x1="17" y1="4" x2="17" y2="16" stroke="#3dba7e" stroke-width="1" stroke-dasharray="2,2"/></svg>Salida</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'gen_fisico')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="2" y="2" width="22" height="16" rx="3" fill="#1e2330" stroke="#4d5670" stroke-width="1" stroke-dasharray="3,2"/><text x="13" y="12" text-anchor="middle" font-size="9" fill="#6b7698" font-weight="600">+</text></svg>Genérico</div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-head">Acceso perimetral · GoPass</div>
+    <div class="sym-grid">
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'gopass_in')"><svg width="26" height="22" viewBox="0 0 26 22"><rect x="1" y="1" width="24" height="15" rx="3" fill="#1a0a2e" stroke="#8b6fff" stroke-width="1"/><text x="13" y="8" text-anchor="middle" font-size="5" fill="#8b6fff" font-weight="600" font-family="monospace">GOPASS</text><path d="M6 12 Q9 9 12 12" fill="none" stroke="#8b6fff" stroke-width="0.9"/><path d="M4 12 Q9 6 12 12" fill="none" stroke="#8b6fff" stroke-width="0.5" opacity=".5"/><path d="M18 12 Q15 9 12 12" fill="none" stroke="#6b4fff" stroke-width="0.9"/><path d="M20 12 Q15 6 12 12" fill="none" stroke="#6b4fff" stroke-width="0.5" opacity=".5"/><text x="13" y="21" text-anchor="middle" font-size="6" fill="#6b4fff">TAG IN</text></svg>RFID Entrada</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'gopass_out')"><svg width="26" height="22" viewBox="0 0 26 22"><rect x="1" y="1" width="24" height="15" rx="3" fill="#091918" stroke="#3dba7e" stroke-width="1"/><text x="13" y="8" text-anchor="middle" font-size="5" fill="#3dba7e" font-weight="600" font-family="monospace">GOPASS</text><path d="M6 12 Q9 9 12 12" fill="none" stroke="#3dba7e" stroke-width="0.9"/><path d="M4 12 Q9 6 12 12" fill="none" stroke="#3dba7e" stroke-width="0.5" opacity=".5"/><path d="M18 12 Q15 9 12 12" fill="none" stroke="#2ec4b6" stroke-width="0.9"/><path d="M20 12 Q15 6 12 12" fill="none" stroke="#2ec4b6" stroke-width="0.5" opacity=".5"/><text x="13" y="21" text-anchor="middle" font-size="6" fill="#2ec4b6">TAG OUT</text></svg>RFID Salida</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'lpr')"><svg width="26" height="22" viewBox="0 0 26 22"><rect x="1" y="3" width="18" height="12" rx="2" fill="#1a1000" stroke="#f5a623" stroke-width="1"/><path d="M19 6 L25 4 L25 14 L19 12Z" fill="#f5a623"/><rect x="3" y="5" width="8" height="5" rx="1" fill="#3d2a00" stroke="#f5a623" stroke-width="0.5"/><text x="13" y="21" text-anchor="middle" font-size="6" fill="#f5a623">LPR</text></svg>Cámara LPR</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'barrera')"><svg width="26" height="22" viewBox="0 0 26 22"><rect x="1" y="10" width="5" height="10" rx="1" fill="#1f0a0a" stroke="#e05555" stroke-width="1"/><line x1="6" y1="10" x2="22" y2="3" stroke="#e05555" stroke-width="2" stroke-linecap="round"/><text x="13" y="21" text-anchor="middle" font-size="6" fill="#e05555">Barrera</text></svg>Barrera</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'control_acceso')"><svg width="26" height="22" viewBox="0 0 26 22"><rect x="3" y="1" width="20" height="16" rx="3" fill="#150d2e" stroke="#8b6fff" stroke-width="1"/><circle cx="13" cy="8" r="4" fill="none" stroke="#8b6fff" stroke-width="1"/><circle cx="13" cy="8" r="1.5" fill="#8b6fff"/><path d="M7 16 Q13 10 19 16" fill="#2a1a5e" stroke="#8b6fff" stroke-width="0.8"/><text x="13" y="21" text-anchor="middle" font-size="6" fill="#6b4fff">Control</text></svg>Control acc.</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'pesaje_veh')"><svg width="26" height="22" viewBox="0 0 26 22"><rect x="1" y="11" width="24" height="6" rx="1" fill="#1f1400" stroke="#f5a623" stroke-width="1"/><rect x="5" y="6" width="16" height="6" rx="1" fill="#3d2a00" stroke="#f5a623" stroke-width="0.5"/><line x1="13" y1="3" x2="13" y2="6" stroke="#f5a623" stroke-width="1"/><path d="M10 3 L13 1 L16 3" fill="none" stroke="#f5a623" stroke-width="0.8"/><text x="13" y="21" text-anchor="middle" font-size="6" fill="#f5a623">Báscula</text></svg>Báscula veh.</div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-head">Actividades documentales</div>
+    <div class="sym-grid">
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'prevalidacion')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="4" y="1" width="18" height="18" rx="2" fill="#150d2e" stroke="#8b6fff" stroke-width="1"/><line x1="7" y1="6" x2="19" y2="6" stroke="#8b6fff" stroke-width="0.8"/><line x1="7" y1="9" x2="19" y2="9" stroke="#8b6fff" stroke-width="0.8"/><line x1="7" y1="12" x2="14" y2="12" stroke="#8b6fff" stroke-width="0.8"/><path d="M15 13 L17 15 L21 11" stroke="#3dba7e" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>Prevalidación</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'awb')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="4" y="1" width="18" height="18" rx="2" fill="#0d2040" stroke="#4a9eff" stroke-width="1"/><line x1="7" y1="6" x2="19" y2="6" stroke="#4a9eff" stroke-width="0.8"/><line x1="7" y1="9" x2="19" y2="9" stroke="#4a9eff" stroke-width="0.8"/><text x="13" y="16" text-anchor="middle" font-size="6" fill="#4a9eff" font-weight="bold">AWB</text></svg>AWB</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'manifiesto')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="2" y="1" width="16" height="18" rx="2" fill="#1a3a6e" stroke="#4a9eff" stroke-width="1"/><rect x="6" y="1" width="16" height="18" rx="2" fill="#0d2040" stroke="#4a9eff" stroke-width="1"/><line x1="9" y1="7" x2="19" y2="7" stroke="#4a9eff" stroke-width="0.8"/><line x1="9" y1="10" x2="19" y2="10" stroke="#4a9eff" stroke-width="0.8"/></svg>Manifiesto</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'edocket')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="3" y="1" width="20" height="18" rx="2" fill="#091918" stroke="#2ec4b6" stroke-width="1"/><path d="M8 10 L11 13 L18 7" stroke="#2ec4b6" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>e-Docket</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'booking')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="3" y="2" width="20" height="16" rx="2" fill="#150d2e" stroke="#8b6fff" stroke-width="1"/><rect x="7" y="5" width="12" height="10" rx="1" fill="#2a1a5e"/><line x1="10" y1="8" x2="16" y2="8" stroke="#8b6fff" stroke-width="0.8"/></svg>Booking</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'edi')"><svg width="26" height="20" viewBox="0 0 26 20"><path d="M3 10 L8 5 L8 15 Z" fill="#3dba7e"/><path d="M23 10 L18 5 L18 15 Z" fill="#3dba7e"/><line x1="9" y1="10" x2="17" y2="10" stroke="#3dba7e" stroke-width="1.2" stroke-dasharray="2,2"/></svg>EDI</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'aceptacion')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="3" y="1" width="20" height="18" rx="2" fill="#0a1f14" stroke="#3dba7e" stroke-width="1"/><path d="M7 10 L11 14 L19 7" stroke="#3dba7e" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Aceptación</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'rechazo')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="3" y="1" width="20" height="18" rx="2" fill="#1f0a0a" stroke="#e05555" stroke-width="1"/><path d="M8 7 L18 14 M18 7 L8 14" stroke="#e05555" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>Rechazo</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'pod')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="4" y="2" width="18" height="16" rx="2" fill="#091918" stroke="#2ec4b6" stroke-width="1"/><path d="M8 11 L11 14 L18 8" stroke="#2ec4b6" stroke-width="1.5" fill="none" stroke-linecap="round"/><text x="13" y="18.5" text-anchor="middle" font-size="5" fill="#2ec4b6">POD</text></svg>POD</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'gen_doc')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="3" y="1" width="20" height="18" rx="2" fill="#1e2330" stroke="#4d5670" stroke-width="1" stroke-dasharray="3,2"/><line x1="7" y1="7" x2="19" y2="7" stroke="#4d5670" stroke-width="0.8" stroke-dasharray="2,2"/><text x="13" y="15" text-anchor="middle" font-size="8" fill="#6b7698">+</text></svg>Genérico</div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-head">Inspección física</div>
+    <div class="sym-grid">
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'inspeccion')"><svg width="26" height="20" viewBox="0 0 26 20"><circle cx="11" cy="10" r="7" fill="#0a1f14" stroke="#3dba7e" stroke-width="1.2"/><path d="M16 15 L21 19" stroke="#3dba7e" stroke-width="1.5" stroke-linecap="round"/><path d="M9 10 L11 12 L14 8" stroke="#3dba7e" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>Inspección</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'screening')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="1" y="5" width="24" height="12" rx="2" fill="#1f0a0a" stroke="#e05555" stroke-width="1"/><path d="M6 11 L20 11" stroke="#e05555" stroke-width="1" stroke-dasharray="2,2"/><circle cx="8" cy="11" r="2" fill="#e05555"/><circle cx="14" cy="11" r="2" fill="#e05555" opacity=".5"/></svg>Screening</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'pesaje')"><svg width="26" height="20" viewBox="0 0 26 20"><path d="M3 18 L23 18 L20 8 L6 8 Z" fill="#1f1400" stroke="#f5a623" stroke-width="1"/><path d="M10 8 Q13 2 16 8" fill="none" stroke="#f5a623" stroke-width="1"/></svg>Pesaje</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'paletizacion')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="2" y="11" width="22" height="4" rx="1" fill="#1f1400" stroke="#f5a623" stroke-width="1"/><rect x="4" y="5" width="8" height="7" rx="1" fill="#3d2a00" stroke="#f5a623" stroke-width="0.8"/><rect x="14" y="5" width="8" height="7" rx="1" fill="#3d2a00" stroke="#f5a623" stroke-width="0.8"/></svg>Paletización</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'almacenamiento')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="1" y="6" width="24" height="13" rx="2" fill="#0a1f14" stroke="#3dba7e" stroke-width="1"/><path d="M1 6 L13 1 L25 6" fill="none" stroke="#3dba7e" stroke-width="1"/><rect x="4" y="10" width="5" height="9" rx="1" fill="#133322"/><rect x="11" y="10" width="5" height="9" rx="1" fill="#133322"/><rect x="18" y="10" width="5" height="9" rx="1" fill="#133322"/></svg>Almacén</div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-head">Actividades lógicas · Sistemas</div>
+    <div class="sym-grid">
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'api_call')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="1" y="5" width="10" height="10" rx="2" fill="#0d2040" stroke="#4a9eff" stroke-width="1"/><rect x="15" y="5" width="10" height="10" rx="2" fill="#0d2040" stroke="#4a9eff" stroke-width="1"/><path d="M11 10 L15 10" stroke="#4a9eff" stroke-width="1" stroke-dasharray="2,1"/><path d="M13 8 L15 10 L13 12" fill="none" stroke="#4a9eff" stroke-width="0.8" stroke-linecap="round"/><text x="6" y="11" text-anchor="middle" font-size="5" fill="#4a9eff">API</text></svg>API Call</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'webhook')"><svg width="26" height="20" viewBox="0 0 26 20"><circle cx="5" cy="10" r="3" fill="#1a0a2e" stroke="#8b6fff" stroke-width="1"/><circle cx="21" cy="10" r="3" fill="#1a0a2e" stroke="#8b6fff" stroke-width="1"/><path d="M8 10 C12 4 14 4 18 10" fill="none" stroke="#8b6fff" stroke-width="1" stroke-dasharray="2,1"/><path d="M8 10 C12 16 14 16 18 10" fill="none" stroke="#6b4fff" stroke-width="0.8"/><circle cx="13" cy="10" r="2" fill="#8b6fff"/></svg>Webhook</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'db_query')"><svg width="26" height="20" viewBox="0 0 26 20"><ellipse cx="13" cy="5" rx="10" ry="3" fill="#0d2040" stroke="#4a9eff" stroke-width="1"/><path d="M3 5 L3 15 Q3 18 13 18 Q23 18 23 15 L23 5" fill="#0d2040" stroke="#4a9eff" stroke-width="1"/><ellipse cx="13" cy="10" rx="10" ry="3" fill="none" stroke="#4a9eff" stroke-width="0.5" stroke-dasharray="2,2"/></svg>Consulta BD</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'validacion_sys')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="3" y="2" width="20" height="16" rx="3" fill="#091918" stroke="#2ec4b6" stroke-width="1"/><path d="M7 10 L10 13 L15 7" stroke="#2ec4b6" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="17" y="6" width="4" height="4" rx="1" fill="#2ec4b6" opacity=".4"/></svg>Validación</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'sms_alert')"><svg width="26" height="20" viewBox="0 0 26 20"><rect x="2" y="3" width="22" height="14" rx="3" fill="#1f1400" stroke="#f5a623" stroke-width="1"/><path d="M8 17 L5 20 L14 17" fill="#1f1400" stroke="#f5a623" stroke-width="0.8"/><text x="13" y="12" text-anchor="middle" font-size="6" fill="#f5a623" font-weight="600">SMS</text></svg>SMS Muelle</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'sync_accs')"><svg width="26" height="20" viewBox="0 0 26 20"><circle cx="13" cy="10" r="8" fill="#0d2040" stroke="#4a9eff" stroke-width="1"/><path d="M13 4 A6 6 0 0 1 19 10" fill="none" stroke="#4a9eff" stroke-width="1.5" stroke-linecap="round"/><path d="M13 16 A6 6 0 0 1 7 10" fill="none" stroke="#4a9eff" stroke-width="1.5" stroke-linecap="round"/><path d="M18 8 L19 10 L21 9" fill="none" stroke="#4a9eff" stroke-width="1" stroke-linecap="round"/><path d="M8 12 L7 10 L5 11" fill="none" stroke="#4a9eff" stroke-width="1" stroke-linecap="round"/></svg>Sync ACCS</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'notificacion')"><svg width="26" height="20" viewBox="0 0 26 20"><path d="M13 2 L13 4 M13 4 C8 4 5 7 5 12 L5 14 L3 17 L23 17 L21 14 L21 12 C21 7 18 4 13 4Z" fill="#1f1400" stroke="#f5a623" stroke-width="1"/><path d="M10 17 Q13 20 16 17" fill="none" stroke="#f5a623" stroke-width="1"/></svg>Notificación</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'evento_sys')"><svg width="26" height="20" viewBox="0 0 26 20"><polygon points="13,1 25,19 1,19" fill="#1f1400" stroke="#f5a623" stroke-width="1"/><line x1="13" y1="8" x2="13" y2="14" stroke="#f5a623" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="17" r="1" fill="#f5a623"/></svg>Evento sys</div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-head">Símbolos VSM</div>
+    <div class="sym-grid">
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'push')"><svg width="26" height="14" viewBox="0 0 26 14"><path d="M1 7 L21 7 M16 3 L21 7 L16 11" stroke="#4a9eff" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="0" y="4" width="5" height="6" fill="#4a9eff" opacity=".3" rx="1"/></svg>Push →</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'pull')"><svg width="26" height="14" viewBox="0 0 26 14"><path d="M1 7 L21 7 M6 3 L1 7 L6 11" stroke="#3dba7e" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="21" y="4" width="5" height="6" fill="#3dba7e" opacity=".3" rx="1"/></svg>← Pull</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'inventario')"><svg width="26" height="20" viewBox="0 0 26 20"><path d="M13 3 L25 9 L25 17 L13 17 L1 17 L1 9 Z" fill="#1f1400" stroke="#f5a623" stroke-width="1"/><text x="13" y="14" text-anchor="middle" font-size="7" fill="#f5a623">INV</text></svg>Inventario</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'kaizen')"><svg width="26" height="20" viewBox="0 0 26 20"><path d="M13 2 L16 8 L23 8 L18 13 L20 19 L13 15 L6 19 L8 13 L3 8 L10 8 Z" fill="#1f0a0a" stroke="#e05555" stroke-width="1"/></svg>Kaizen</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'operador')"><svg width="26" height="20" viewBox="0 0 26 20"><circle cx="13" cy="7" r="5" fill="#1e2330" stroke="#6b7698" stroke-width="1"/><path d="M5 19 Q13 12 21 19" fill="#1e2330" stroke="#6b7698" stroke-width="1"/></svg>Operador</div>
+      <div class="sym-btn" draggable="true" ondragstart="drag(event,'timeline')"><svg width="26" height="14" viewBox="0 0 26 14"><rect x="1" y="4" width="24" height="6" rx="1" fill="#091918" stroke="#2ec4b6" stroke-width="1"/><line x1="7" y1="4" x2="7" y2="10" stroke="#2ec4b6" stroke-width="0.8"/><line x1="13" y1="4" x2="13" y2="10" stroke="#2ec4b6" stroke-width="0.8"/><line x1="19" y1="4" x2="19" y2="10" stroke="#2ec4b6" stroke-width="0.8"/></svg>Timeline</div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-head">Tipo de actividad</div>
+    <div class="act-list">
+      <div class="act-item" draggable="true" ondragstart="drag(event,'va')"><span class="act-badge" style="background:#133322;color:#3dba7e">VA</span><span class="act-name">Agrega valor</span></div>
+      <div class="act-item" draggable="true" ondragstart="drag(event,'nva')"><span class="act-badge" style="background:#1f0a0a;color:#e05555">NVA</span><span class="act-name">No agrega valor</span></div>
+      <div class="act-item" draggable="true" ondragstart="drag(event,'nvam')"><span class="act-badge" style="background:#1f1400;color:#f5a623">NVA-N</span><span class="act-name">NVA necesaria</span></div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-head">Waste TIMWOOD</div>
+    <div class="waste-wrap" id="waste-list">
+      <span class="waste-tag" onclick="toggleWaste(this)" data-w="T·Transporte">T</span>
+      <span class="waste-tag" onclick="toggleWaste(this)" data-w="I·Inventario">I</span>
+      <span class="waste-tag" onclick="toggleWaste(this)" data-w="M·Movimiento">M</span>
+      <span class="waste-tag" onclick="toggleWaste(this)" data-w="W·Espera">W</span>
+      <span class="waste-tag" onclick="toggleWaste(this)" data-w="O·Sobreprod.">O</span>
+      <span class="waste-tag" onclick="toggleWaste(this)" data-w="O·Sobroprc.">O2</span>
+      <span class="waste-tag" onclick="toggleWaste(this)" data-w="D·Defectos">D</span>
+    </div>
+  </div>
+
+</div><!-- end sidebar -->
+
+<!-- ─── CANVAS AREA ─── -->
+<div class="canvas-area">
+  <div class="tab-bar">
+    <div class="tab active" id="tab-vsm" onclick="switchTab('vsm')"><div class="tab-dot" style="background:#4a9eff"></div>VSM Canvas</div>
+    <div class="tab" id="tab-layout" onclick="switchTab('layout')"><div class="tab-dot" style="background:#ff7052"></div>Layout — Planta física</div>
+    <div class="tab" id="tab-mapa" onclick="switchTab('mapa')"><div class="tab-dot" style="background:#3dba7e"></div>Mapa Terminal</div>
+    <div class="tool-row" id="vsm-tools">
+      <button class="tool-btn active" id="tool-select" onclick="setTool('select')">Seleccionar</button>
+      <button class="tool-btn" id="tool-connect" onclick="setTool('connect')">Conectar</button>
+      <button class="tool-btn" id="tool-note" onclick="setTool('note')">Nota</button>
+      <span style="font-size:10px;color:var(--text3);margin-left:6px" id="tool-hint">Arrastra elementos al canvas</span>
+    </div>
+  </div>
+
+  <!-- TAB 1: VSM CANVAS -->
+  <div class="canvas-wrap" id="t-vsm" style="display:flex">
+    <canvas id="vsm-canvas" width="1100" height="620"></canvas>
+  </div>
+
+  <!-- TAB 2: LAYOUT FÍSICO -->
+  <div class="tab-content" id="t-layout">
+    <div style="padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <span style="font-size:11px;color:var(--text2);font-weight:500">Terminal de Carga El Dorado — Layout As-Is</span>
+      <span style="font-size:10px;color:var(--text3)">Arrastra nodos del sidebar a cada zona · Clic derecho elimina · Doble clic edita</span>
+      <button class="tb-btn" style="margin-left:auto" onclick="clearLayout()">Limpiar layout</button>
+    </div>
+    <div style="overflow:auto;flex:1" id="layout-scroll"><canvas id="layout-canvas"></canvas></div>
+    <div style="padding:5px 12px;background:var(--bg2);border-top:1px solid var(--border);font-size:9px;color:var(--text3)" id="layout-status">Layout vacío — arrastra elementos del sidebar</div>
+  </div>
+
+  <!-- TAB 3: MAPA TERMINAL -->
+  <div class="tab-content" id="t-mapa">
+    <div style="overflow:auto;flex:1;padding:14px">
+
+      <div class="mapa-kpi-row">
+        <div class="mkpi"><div class="mkpi-lbl">Superficie</div><div class="mkpi-val" style="color:var(--blue)">72.880</div><div class="mkpi-sub">m² totales</div></div>
+        <div class="mkpi"><div class="mkpi-lbl">Muelles</div><div class="mkpi-val" style="color:var(--green)">214</div><div class="mkpi-sub">docking</div></div>
+        <div class="mkpi"><div class="mkpi-lbl">Bodegas</div><div class="mkpi-val" style="color:var(--amber)">16</div><div class="mkpi-sub">almacén</div></div>
+        <div class="mkpi"><div class="mkpi-lbl">Cuartos fríos</div><div class="mkpi-val" style="color:var(--teal)">10</div><div class="mkpi-sub">9.350 m²</div></div>
+        <div class="mkpi"><div class="mkpi-lbl">Volumen</div><div class="mkpi-val" style="color:var(--purple)">809K</div><div class="mkpi-sub">ton / 2024</div></div>
+      </div>
+
+      <div style="background:var(--green-bg);border:1px solid var(--green-dim);border-radius:var(--radius);padding:7px 12px;margin-bottom:10px;display:flex;gap:12px;align-items:center">
+        <span style="font-size:10px;color:var(--green);font-weight:600;font-family:'IBM Plex Mono',monospace">✈ AIRSIDE — Plataforma aeronaves</span>
+        <span style="font-size:9px;color:var(--text3)">25 posiciones · cargueros nacionales e internacionales</span>
+      </div>
+
+      <div class="tc-grid">
+        <div class="tc-card" style="border-color:#185FA5">
+          <div class="tc-hd" style="background:#0d2040;border-color:#1a3a6e"><div class="tc-title" style="color:#4a9eff">TC1</div><div class="tc-sub" style="color:#378ADD">Nacional · Internacional · 24.797 m²</div><div style="font-size:8px;color:#185FA5;margin-top:2px;font-family:'IBM Plex Mono',monospace">DHL · FedEx · UPS · AeroSucre · Helicol</div></div>
+          <div class="tc-body">
+            <div class="tc-zone" style="border-color:#1a3a6e;background:#0a1522"><div class="tc-zi" style="background:#4a9eff"></div><span class="tc-zn">Bodega exportación</span><span class="tc-zs">+60 ptas</span></div>
+            <div class="tc-zone" style="border-color:#1a3a6e;background:#0a1522"><div class="tc-zi" style="background:#378ADD"></div><span class="tc-zn">Bodega importación</span><span class="tc-zs">Pesaje·XRay</span></div>
+            <div class="tc-zone" style="border-color:#042C53;background:#020f1f"><div class="tc-zi" style="background:#042C53;border:1px solid #85B7EB"></div><span class="tc-zn" style="color:var(--text3)">Cuartos fríos</span><span class="tc-zs">4 · −20°C</span></div>
+            <div class="tc-zone" style="border-color:#1a3a6e;background:#0a1522"><div class="tc-zi" style="background:#2ec4b6"></div><span class="tc-zn">Aduana · DIAN</span><span class="tc-zs">Inspección</span></div>
+          </div>
+          <div class="tc-docks">${Array.from({length:12},(_,i)=>`<div class="dk" style="background:#0d2040;color:#4a9eff;border-color:#1a3a6e">D${i+1}</div>`).join('')}${Array.from({length:6},()=>`<div class="dk" style="background:#0a1522;color:var(--text3)">·</div>`).join('')}</div>
+        </div>
+        <div class="tc-card" style="border-color:#0F6E56">
+          <div class="tc-hd" style="background:#0a1f14;border-color:#133322"><div class="tc-title" style="color:#3dba7e">TC2</div><div class="tc-sub" style="color:#1D9E75">Internacional · 23.624 m²</div><div style="font-size:8px;color:#0F6E56;margin-top:2px;font-family:'IBM Plex Mono',monospace">Avianca Cargo · LATAM · Lufthansa · Cargolux</div></div>
+          <div class="tc-body">
+            <div class="tc-zone" style="border-color:#133322;background:#06150d"><div class="tc-zi" style="background:#3dba7e"></div><span class="tc-zn">Exportación</span><span class="tc-zs">ULD·Palet.</span></div>
+            <div class="tc-zone" style="border-color:#133322;background:#06150d"><div class="tc-zi" style="background:#1D9E75"></div><span class="tc-zn">Importación</span><span class="tc-zs">Breaking bulk</span></div>
+            <div class="tc-zone" style="border-color:#04342C;background:#020f09"><div class="tc-zi" style="background:#04342C;border:1px solid #5DCAA5"></div><span class="tc-zn" style="color:var(--text3)">Cuartos fríos</span><span class="tc-zs">Farma·Flores</span></div>
+            <div class="tc-zone" style="border-color:#133322;background:#06150d"><div class="tc-zi" style="background:#8b6fff"></div><span class="tc-zn">Avianca Hub</span><span class="tc-zs">e-freight</span></div>
+          </div>
+          <div class="tc-docks">${Array.from({length:10},(_,i)=>`<div class="dk" style="background:#0a1f14;color:#3dba7e;border-color:#133322">D${i+1}</div>`).join('')}${Array.from({length:8},()=>`<div class="dk" style="background:#06150d;color:var(--text3)">·</div>`).join('')}</div>
+        </div>
+        <div class="tc-card" style="border-color:#854F0B">
+          <div class="tc-hd" style="background:#1f1400;border-color:#3d2a00"><div class="tc-title" style="color:#f5a623">TC3</div><div class="tc-sub" style="color:#BA7517">Nacional · Especial · 18.129 m²</div><div style="font-size:8px;color:#854F0B;margin-top:2px;font-family:'IBM Plex Mono',monospace">Searca · TransAero · DG · Perecederos</div></div>
+          <div class="tc-body">
+            <div class="tc-zone" style="border-color:#3d2a00;background:#140d00"><div class="tc-zi" style="background:#f5a623"></div><span class="tc-zn">Carga especial</span><span class="tc-zs">DG·OOG</span></div>
+            <div class="tc-zone" style="border-color:#3d2a00;background:#140d00"><div class="tc-zi" style="background:#EF9F27"></div><span class="tc-zn">Carga nacional</span><span class="tc-zs">Bodega DOM</span></div>
+            <div class="tc-zone" style="border-color:#3d2a00;background:#140d00"><div class="tc-zi" style="background:#e05555"></div><span class="tc-zn">Perecederos</span><span class="tc-zs">Flores·Alim.</span></div>
+            <div class="tc-zone" style="border-color:#3d2a00;background:#140d00"><div class="tc-zi" style="background:#6b7698"></div><span class="tc-zn">Almacén general</span><span class="tc-zs">Buffer</span></div>
+          </div>
+          <div class="tc-docks">${Array.from({length:8},(_,i)=>`<div class="dk" style="background:#1f1400;color:#f5a623;border-color:#3d2a00">D${i+1}</div>`).join('')}${Array.from({length:10},()=>`<div class="dk" style="background:#140d00;color:var(--text3)">·</div>`).join('')}</div>
+        </div>
+      </div>
+
+      <div class="gate-row">
+        <div class="gate-card"><div class="gate-hd"><span class="gate-hd-nm">◉ PUERTA TC1</span><span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.2);color:#fff;font-family:'IBM Plex Mono',monospace">24/7</span></div><div class="gate-bd"><div class="gate-row-i"><span class="gate-k">Acceso</span><span class="gate-v">Nac · Int</span></div><div class="gate-row-i"><span class="gate-k">GoPass RFID</span><span class="gate-v">TAG IN/OUT</span></div><div class="gate-row-i"><span class="gate-k">LPR</span><span class="gate-v">Lectura placas</span></div></div></div>
+        <div class="gate-card"><div class="gate-hd"><span class="gate-hd-nm">◉ PUERTA TC2</span><span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.2);color:#fff;font-family:'IBM Plex Mono',monospace">24/7</span></div><div class="gate-bd"><div class="gate-row-i"><span class="gate-k">Acceso</span><span class="gate-v">Solo Int.</span></div><div class="gate-row-i"><span class="gate-k">GoPass RFID</span><span class="gate-v">Slot req.</span></div><div class="gate-row-i"><span class="gate-k">DIAN</span><span class="gate-v">Doc. obligat.</span></div></div></div>
+        <div class="gate-card"><div class="gate-hd"><span class="gate-hd-nm">◉ PUERTA TC3</span><span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.2);color:#fff;font-family:'IBM Plex Mono',monospace">24/7</span></div><div class="gate-bd"><div class="gate-row-i"><span class="gate-k">Acceso</span><span class="gate-v">DG · OOG</span></div><div class="gate-row-i"><span class="gate-k">GoPass RFID</span><span class="gate-v">TAG IN/OUT</span></div><div class="gate-row-i"><span class="gate-k">Aerocivil</span><span class="gate-v">DG checklist</span></div></div></div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;margin-bottom:8px">
+        <span style="font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:var(--text2)">CAC — Centro Administrativo · 6.328 m²</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">${['OPAIN','Aerocivil','DIAN','Control Tower ACCS','Forwarders','Aerolíneas'].map(z=>`<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:var(--bg4);border:1px solid var(--border2);color:var(--text3)">${z}</span>`).join('')}</div>
+      </div>
+
+      <div style="background:var(--amber-bg);border:1px solid var(--amber-dim);border-radius:var(--radius);padding:7px 12px">
+        <span style="font-size:9px;font-weight:600;color:var(--amber);font-family:'IBM Plex Mono',monospace">CALLE 26 → → → → → → Vía de acceso principal (Occidente → Oriente)</span>
+        <div style="font-size:9px;color:var(--text3);margin-top:3px">Carril derecho TC1-TC2-TC3 · Parqueadero CAC City Parking Cargo Port · 170–190K veh/año</div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- end canvas-area -->
+
+<!-- ─── RIGHT PANEL ─── -->
+<div class="rpanel">
+  <div class="rp-sec">
+    <div class="rp-lbl">Propiedades del nodo</div>
+    <div id="node-props"><div style="font-size:10px;color:var(--text3)">Selecciona un nodo</div></div>
+  </div>
+  <div class="rp-sec" style="flex:1">
+    <div class="rp-lbl">Notas consultor</div>
+    <textarea class="note-area" rows="8" id="notes-area" placeholder="Observaciones, restricciones, oportunidades de mejora..." onchange="markDirty()"></textarea>
+  </div>
+  <div class="rp-sec">
+    <div class="rp-lbl">Leyenda</div>
+    <div class="leg-row"><div class="leg-dot" style="background:#3dba7e"></div><span class="leg-txt">VA — Agrega valor</span></div>
+    <div class="leg-row"><div class="leg-dot" style="background:#e05555"></div><span class="leg-txt">NVA — No agrega valor</span></div>
+    <div class="leg-row"><div class="leg-dot" style="background:#f5a623"></div><span class="leg-txt">NVA-N — Necesaria</span></div>
+    <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
+      <button class="act-btn green" onclick="loadTemplate()">Plantilla As-Is</button>
+      <button class="act-btn blue" onclick="saveData()">Guardar sesión</button>
+      <button class="act-btn green" onclick="exportHTML()">Exportar HTML</button>
+      <button class="act-btn mute" onclick="clearAll()">Limpiar canvas</button>
+    </div>
+  </div>
+</div>
+</div><!-- end main -->
+
+<script>
+const canvas=document.getElementById('vsm-canvas'), ctx=canvas.getContext('2d');
+let nodes=[],connections=[],selectedNode=null,connectFrom=null;
+let currentTool='select',isDragging=false,dragOffX=0,dragOffY=0;
+let wasteActive=[],dragPayload=null,dirty=false;
+let LC=null,LCX=null,layoutNodes=[],layoutDragging=null,layoutDragOff={x:0,y:0},layoutInited=false,layoutConns=[];
+
+const CFG={
+  ffwd:{label:'Freight Forwarder',color:'#0d2040',stroke:'#4a9eff',text:'#4a9eff',tag:'FFWD',tagC:'#1a3a6e'},
+  trucker:{label:'Trucker',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'TRUCK',tagC:'#3d2a00'},
+  gha:{label:'GHA',color:'#0a1f14',stroke:'#3dba7e',text:'#3dba7e',tag:'GHA',tagC:'#133322'},
+  airline:{label:'Airline',color:'#150d2e',stroke:'#8b6fff',text:'#8b6fff',tag:'AIR',tagC:'#2a1a5e'},
+  tps:{label:'Aeropuerto (TPS)',color:'#1f0d08',stroke:'#ff7052',text:'#ff7052',tag:'TPS',tagC:'#3d1a10'},
+  customs:{label:'Aduana / CB',color:'#091918',stroke:'#2ec4b6',text:'#2ec4b6',tag:'CB',tagC:'#0e2d2a'},
+  llegada:{label:'Llegada vehículo',color:'#0d2040',stroke:'#4a9eff',text:'#4a9eff',tag:'PHYS',tagC:'#1a3a6e'},
+  queue:{label:'Cola entrada',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'PHYS',tagC:'#3d2a00'},
+  turno:{label:'Asignación turno',color:'#0a1f14',stroke:'#3dba7e',text:'#3dba7e',tag:'PHYS',tagC:'#133322'},
+  slot:{label:'Gestión de slot',color:'#150d2e',stroke:'#8b6fff',text:'#8b6fff',tag:'PHYS',tagC:'#2a1a5e'},
+  docking:{label:'Docking / Muelle',color:'#1f0d08',stroke:'#ff7052',text:'#ff7052',tag:'PHYS',tagC:'#3d1a10'},
+  descargue:{label:'Descargue mercancía',color:'#1f0d08',stroke:'#ff7052',text:'#ff7052',tag:'PHYS',tagC:'#3d1a10'},
+  cargue:{label:'Cargue aeronave',color:'#091918',stroke:'#2ec4b6',text:'#2ec4b6',tag:'PHYS',tagC:'#0e2d2a'},
+  despacho:{label:'Despacho',color:'#1e2330',stroke:'#6b7698',text:'#8892aa',tag:'PHYS',tagC:'#252a38'},
+  salida:{label:'Salida terminal',color:'#0a1f14',stroke:'#3dba7e',text:'#3dba7e',tag:'PHYS',tagC:'#133322'},
+  gen_fisico:{label:'Actividad física',color:'#1e2330',stroke:'#4d5670',text:'#8892aa',tag:'PHYS',tagC:'#252a38'},
+  gopass_in:{label:'GoPass RFID Entrada',color:'#1a0a2e',stroke:'#8b6fff',text:'#8b6fff',tag:'RFID',tagC:'#2a1a5e'},
+  gopass_out:{label:'GoPass RFID Salida',color:'#091918',stroke:'#3dba7e',text:'#3dba7e',tag:'RFID',tagC:'#0e2d2a'},
+  lpr:{label:'Cámara LPR Placas',color:'#1a1000',stroke:'#f5a623',text:'#f5a623',tag:'LPR',tagC:'#3d2a00'},
+  barrera:{label:'Barrera acceso',color:'#1f0a0a',stroke:'#e05555',text:'#e05555',tag:'ACC',tagC:'#3d1212'},
+  control_acceso:{label:'Control de acceso',color:'#150d2e',stroke:'#8b6fff',text:'#8b6fff',tag:'ACC',tagC:'#2a1a5e'},
+  pesaje_veh:{label:'Báscula vehicular',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'PHYS',tagC:'#3d2a00'},
+  prevalidacion:{label:'Prevalidación doc.',color:'#150d2e',stroke:'#8b6fff',text:'#8b6fff',tag:'DOC',tagC:'#2a1a5e'},
+  awb:{label:'AWB',color:'#0d2040',stroke:'#4a9eff',text:'#4a9eff',tag:'DOC',tagC:'#1a3a6e'},
+  manifiesto:{label:'Manifiesto de carga',color:'#0d2040',stroke:'#4a9eff',text:'#4a9eff',tag:'DOC',tagC:'#1a3a6e'},
+  edocket:{label:'e-Docket',color:'#091918',stroke:'#2ec4b6',text:'#2ec4b6',tag:'DOC',tagC:'#0e2d2a'},
+  booking:{label:'Booking',color:'#150d2e',stroke:'#8b6fff',text:'#8b6fff',tag:'DOC',tagC:'#2a1a5e'},
+  edi:{label:'Mensaje EDI',color:'#0a1f14',stroke:'#3dba7e',text:'#3dba7e',tag:'DOC',tagC:'#133322'},
+  aceptacion:{label:'Aceptación doc.',color:'#0a1f14',stroke:'#3dba7e',text:'#3dba7e',tag:'DOC',tagC:'#133322'},
+  rechazo:{label:'Rechazo doc.',color:'#1f0a0a',stroke:'#e05555',text:'#e05555',tag:'DOC',tagC:'#3d1212'},
+  gen_doc:{label:'Actividad documental',color:'#1e2330',stroke:'#4d5670',text:'#8892aa',tag:'DOC',tagC:'#252a38'},
+  inspeccion:{label:'Inspección',color:'#0a1f14',stroke:'#3dba7e',text:'#3dba7e',tag:'INSP',tagC:'#133322'},
+  screening:{label:'Screening X-Ray',color:'#1f0a0a',stroke:'#e05555',text:'#e05555',tag:'INSP',tagC:'#3d1212'},
+  pesaje:{label:'Pesaje mercancía',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'INSP',tagC:'#3d2a00'},
+  paletizacion:{label:'Paletización',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'INSP',tagC:'#3d2a00'},
+  almacenamiento:{label:'Almacenamiento',color:'#0a1f14',stroke:'#3dba7e',text:'#3dba7e',tag:'INSP',tagC:'#133322'},
+  pod:{label:'POD / Entrega',color:'#091918',stroke:'#2ec4b6',text:'#2ec4b6',tag:'INSP',tagC:'#0e2d2a'},
+  api_call:{label:'API Call',color:'#0d2040',stroke:'#4a9eff',text:'#4a9eff',tag:'SYS',tagC:'#1a3a6e'},
+  webhook:{label:'Webhook',color:'#1a0a2e',stroke:'#8b6fff',text:'#8b6fff',tag:'SYS',tagC:'#2a1a5e'},
+  db_query:{label:'Consulta BD',color:'#0d2040',stroke:'#4a9eff',text:'#4a9eff',tag:'SYS',tagC:'#1a3a6e'},
+  validacion_sys:{label:'Validación sistema',color:'#091918',stroke:'#2ec4b6',text:'#2ec4b6',tag:'SYS',tagC:'#0e2d2a'},
+  sms_alert:{label:'SMS asignación muelle',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'SYS',tagC:'#3d2a00'},
+  notificacion:{label:'Notificación push',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'SYS',tagC:'#3d2a00'},
+  sync_accs:{label:'Sync ACCS',color:'#0d2040',stroke:'#4a9eff',text:'#4a9eff',tag:'SYS',tagC:'#1a3a6e'},
+  evento_sys:{label:'Evento sistema',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'SYS',tagC:'#3d2a00'},
+  push:{label:'Flujo Push',color:'#0d2040',stroke:'#4a9eff',text:'#4a9eff',tag:'VSM',tagC:'#1a3a6e'},
+  pull:{label:'Flujo Pull',color:'#0a1f14',stroke:'#3dba7e',text:'#3dba7e',tag:'VSM',tagC:'#133322'},
+  inventario:{label:'Inventario',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'VSM',tagC:'#3d2a00'},
+  kaizen:{label:'Kaizen Burst',color:'#1f0a0a',stroke:'#e05555',text:'#e05555',tag:'VSM',tagC:'#3d1212'},
+  operador:{label:'Operador',color:'#1e2330',stroke:'#6b7698',text:'#8892aa',tag:'VSM',tagC:'#252a38'},
+  timeline:{label:'Timeline',color:'#091918',stroke:'#2ec4b6',text:'#2ec4b6',tag:'VSM',tagC:'#0e2d2a'},
+  va:{label:'Agrega valor (VA)',color:'#0a1f14',stroke:'#3dba7e',text:'#3dba7e',tag:'VA',tagC:'#133322'},
+  nva:{label:'No agrega valor',color:'#1f0a0a',stroke:'#e05555',text:'#e05555',tag:'NVA',tagC:'#3d1212'},
+  nvam:{label:'NVA Necesaria',color:'#1f1400',stroke:'#f5a623',text:'#f5a623',tag:'NVA-N',tagC:'#3d2a00'},
+  note:{label:'Nota',color:'#1e2330',stroke:'#4d5670',text:'#8892aa',tag:'NOTE',tagC:'#252a38'},
+};
+const fb=CFG.despacho;
+function C(t){return CFG[t]||fb;}
+
+/* ─── DRAG ─── */
+function drag(e,type){dragPayload={type};e.dataTransfer.setData('text/plain',type);}
+const cw=document.getElementById('t-vsm');
+cw.addEventListener('dragover',e=>e.preventDefault());
+cw.addEventListener('drop',e=>{
+  e.preventDefault();if(!dragPayload)return;
+  const r=canvas.getBoundingClientRect();
+  addNode(dragPayload.type,e.clientX-r.left,e.clientY-r.top);
+  dragPayload=null;markDirty();
+});
+
+/* ─── NODES ─── */
+function addNode(type,x,y){
+  const c=C(type);
+  nodes.push({id:Date.now()+Math.random(),type,x:Math.round(x-60),y:Math.round(y-30),w:120,h:56,label:c.label,ct:'',actType:'',waste:[],notes:''});
+  render();
+}
+
+/* ─── RENDER ─── */
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid();
+  connections.forEach(drawConn);
+  nodes.forEach(n=>drawNode(n,n===selectedNode));
+}
+function drawGrid(){
+  ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=0.5;
+  for(let x=0;x<canvas.width;x+=24){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+  for(let y=0;y<canvas.height;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+}
+function drawConn(c){
+  const a=nodes.find(n=>n.id===c.from),b=nodes.find(n=>n.id===c.to);if(!a||!b)return;
+  const ax=a.x+a.w/2,ay=a.y+a.h,bx=b.x+b.w/2,by=b.y;
+  ctx.save();ctx.strokeStyle='#4a9eff';ctx.lineWidth=1.5;
+  if(c.type==='pull'){ctx.setLineDash([5,3]);ctx.strokeStyle='#3dba7e';}
+  ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();ctx.setLineDash([]);
+  const ang=Math.atan2(by-ay,bx-ax);
+  ctx.fillStyle=c.type==='pull'?'#3dba7e':'#4a9eff';
+  ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-10*Math.cos(ang-0.35),by-10*Math.sin(ang-0.35));ctx.lineTo(bx-10*Math.cos(ang+0.35),by-10*Math.sin(ang+0.35));ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+function drawIcon(c,type,x,y,s,col){
+  c.save();c.strokeStyle=col;c.fillStyle=col;c.lineWidth=1.2;c.lineCap='round';c.lineJoin='round';
+  const h=s*0.7;
+  switch(type){
+    case 'llegada':
+      c.fillStyle=col+'33';c.beginPath();c.rect(x,y+h*0.2,s*0.72,h*0.6);c.fill();c.stroke();
+      c.fillStyle=col+'33';c.beginPath();c.rect(x+s*0.72,y+h*0.35,s*0.28,h*0.45);c.fill();c.stroke();
+      c.fillStyle=col;c.beginPath();c.arc(x+s*0.2,y+h,h*0.22,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(x+s*0.72,y+h,h*0.22,0,Math.PI*2);c.fill();break;
+    case 'queue':
+      [0,1,2].forEach(i=>{c.fillStyle=col+(i===2?'44':'88');c.beginPath();c.rect(x+i*s*0.32,y+h*0.2,s*0.28,h*0.6);c.fill();c.stroke();});break;
+    case 'turno':
+      c.fillStyle='none';c.beginPath();c.arc(x+s/2,y+h/2,h*0.45,0,Math.PI*2);c.stroke();
+      c.beginPath();c.moveTo(x+s/2,y+h*0.1);c.lineTo(x+s/2,y+h/2);c.lineTo(x+s*0.72,y+h/2);c.stroke();break;
+    case 'slot':
+      c.fillStyle=col+'33';
+      c.beginPath();c.rect(x,y,s*0.44,h);c.fill();c.stroke();
+      c.beginPath();c.rect(x+s*0.54,y,s*0.44,h);c.fill();c.stroke();
+      c.font=`600 ${h*0.4}px IBM Plex Mono,monospace`;c.textAlign='center';
+      c.fillStyle=col;c.fillText('S1',x+s*0.22,y+h*0.65);c.fillText('S2',x+s*0.76,y+h*0.65);break;
+    case 'docking':
+      c.fillStyle=col+'33';c.beginPath();c.rect(x,y+h*0.4,s,h*0.6);c.fill();c.stroke();
+      c.beginPath();c.moveTo(x+s*0.25,y+h*0.4);c.lineTo(x+s*0.25,y);c.lineTo(x+s*0.75,y);c.lineTo(x+s*0.75,y+h*0.4);c.stroke();
+      c.fillStyle=col;c.beginPath();c.rect(x+s*0.4,y+h*0.5,s*0.2,h*0.35);c.fill();break;
+    case 'descargue':
+      c.fillStyle=col+'33';c.beginPath();c.rect(x+s*0.2,y,s*0.6,h*0.5);c.fill();c.stroke();
+      c.beginPath();c.moveTo(x+s/2,y+h*0.5);c.lineTo(x+s/2,y+h);c.stroke();
+      c.beginPath();c.moveTo(x+s*0.2,y+h*0.75);c.lineTo(x+s/2,y+h);c.lineTo(x+s*0.8,y+h*0.75);c.stroke();break;
+    case 'cargue':
+      c.fillStyle=col+'33';c.beginPath();c.rect(x+s*0.2,y+h*0.5,s*0.6,h*0.5);c.fill();c.stroke();
+      c.beginPath();c.moveTo(x+s/2,y+h*0.5);c.lineTo(x+s/2,y);c.stroke();
+      c.beginPath();c.moveTo(x+s*0.2,y+h*0.25);c.lineTo(x+s/2,y);c.lineTo(x+s*0.8,y+h*0.25);c.stroke();break;
+    case 'despacho':case 'salida':
+      c.beginPath();c.moveTo(x,y+h/2);c.lineTo(x+s*0.75,y+h/2);c.stroke();
+      c.beginPath();c.moveTo(x+s*0.5,y+h*0.15);c.lineTo(x+s,y+h/2);c.lineTo(x+s*0.5,y+h*0.85);c.stroke();
+      if(type==='salida'){c.beginPath();c.arc(x+s*0.2,y+h/2,h*0.3,0,Math.PI*2);c.stroke();}break;
+    case 'inspeccion':
+      c.beginPath();c.arc(x+s*0.4,y+h/2,h*0.42,0,Math.PI*2);c.stroke();
+      c.beginPath();c.moveTo(x+s*0.7,y+h*0.72);c.lineTo(x+s,y+h);c.lineWidth=1.8;c.stroke();
+      c.lineWidth=1.2;c.beginPath();c.moveTo(x+s*0.24,y+h/2);c.lineTo(x+s*0.36,y+h*0.64);c.lineTo(x+s*0.56,y+h*0.32);c.stroke();break;
+    case 'screening':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x,y+h*0.1,s,h*0.8);c.fill();c.stroke();
+      [0.2,0.5,0.8].forEach((f,i)=>{c.globalAlpha=1-i*0.3;c.beginPath();c.arc(x+s*f,y+h/2,h*0.18,0,Math.PI*2);c.fill();});
+      c.globalAlpha=1;break;
+    case 'pesaje':case 'pesaje_veh':
+      c.fillStyle=col+'22';c.beginPath();c.moveTo(x,y+h);c.lineTo(x+s*0.2,y+h*0.4);c.lineTo(x+s*0.8,y+h*0.4);c.lineTo(x+s,y+h);c.closePath();c.fill();c.stroke();
+      c.beginPath();c.moveTo(x+s*0.35,y+h*0.4);c.quadraticCurveTo(x+s/2,y,x+s*0.65,y+h*0.4);c.stroke();break;
+    case 'paletizacion':
+      c.fillStyle=col+'33';c.beginPath();c.rect(x,y+h*0.55,s,h*0.2);c.fill();c.stroke();
+      [[0,0],[s*0.54,0],[0,h*0.3],[s*0.54,h*0.3]].forEach(([dx,dy])=>{c.beginPath();c.rect(x+dx,y+dy,s*0.42,h*0.28);c.fill();c.stroke();});break;
+    case 'almacenamiento':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x,y+h*0.3,s,h*0.7);c.fill();c.stroke();
+      c.beginPath();c.moveTo(x,y+h*0.3);c.lineTo(x+s/2,y);c.lineTo(x+s,y+h*0.3);c.stroke();
+      [s*0.1,s*0.42,s*0.74].forEach(dx=>{c.fillStyle=col+'44';c.beginPath();c.rect(x+dx,y+h*0.5,s*0.22,h*0.5);c.fill();c.stroke();});break;
+    case 'pod':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x+s*0.1,y,s*0.8,h);c.fill();c.stroke();
+      c.beginPath();c.moveTo(x+s*0.25,y+h/2);c.lineTo(x+s*0.42,y+h*0.7);c.lineTo(x+s*0.75,y+h*0.28);c.stroke();break;
+    case 'prevalidacion':case 'awb':case 'manifiesto':case 'booking':case 'aceptacion':case 'gen_doc':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x+s*0.1,y,s*0.8,h);c.fill();c.stroke();
+      [h*0.25,h*0.45,h*0.65].forEach(dy=>{c.beginPath();c.moveTo(x+s*0.22,y+dy);c.lineTo(x+s*0.78,y+dy);c.stroke();});
+      if(type==='aceptacion'){c.strokeStyle='#3dba7e';c.lineWidth=1.5;c.beginPath();c.moveTo(x+s*0.28,y+h*0.55);c.lineTo(x+s*0.46,y+h*0.75);c.lineTo(x+s*0.72,y+h*0.3);c.stroke();}break;
+    case 'rechazo':
+      c.fillStyle='#e05555'+'22';c.beginPath();c.rect(x+s*0.1,y,s*0.8,h);c.fill();c.stroke();
+      c.strokeStyle='#e05555';c.lineWidth=1.5;
+      c.beginPath();c.moveTo(x+s*0.28,y+h*0.28);c.lineTo(x+s*0.72,y+h*0.72);c.stroke();
+      c.beginPath();c.moveTo(x+s*0.72,y+h*0.28);c.lineTo(x+s*0.28,y+h*0.72);c.stroke();break;
+    case 'edocket':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x+s*0.1,y,s*0.8,h);c.fill();c.stroke();
+      c.lineWidth=1.8;c.beginPath();c.moveTo(x+s*0.25,y+h/2);c.lineTo(x+s*0.42,y+h*0.7);c.lineTo(x+s*0.75,y+h*0.28);c.stroke();break;
+    case 'edi':
+      c.beginPath();c.moveTo(x,y+h/2);c.lineTo(x+s*0.3,y);c.lineTo(x+s*0.3,y+h);c.closePath();c.fill();
+      c.beginPath();c.moveTo(x+s,y+h/2);c.lineTo(x+s*0.7,y);c.lineTo(x+s*0.7,y+h);c.closePath();c.fill();
+      c.setLineDash([2,2]);c.beginPath();c.moveTo(x+s*0.32,y+h/2);c.lineTo(x+s*0.68,y+h/2);c.stroke();c.setLineDash([]);break;
+    case 'gopass_in':case 'gopass_out':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x+s*0.1,y+h*0.1,s*0.5,h*0.8);c.fill();c.stroke();
+      [h*0.2,h*0.38,h*0.56].forEach(r=>{c.beginPath();c.arc(x+s*0.72,y+h/2,r,Math.PI*(-0.7),Math.PI*0.7);c.stroke();});
+      c.fillStyle=col;c.beginPath();c.arc(x+s*0.72,y+h/2,h*0.1,0,Math.PI*2);c.fill();break;
+    case 'lpr':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x,y+h*0.15,s*0.72,h*0.7);c.fill();c.stroke();
+      c.fillStyle=col+'44';c.beginPath();c.rect(x+s*0.1,y+h*0.28,s*0.38,h*0.35);c.fill();c.stroke();
+      c.beginPath();c.moveTo(x+s*0.72,y+h*0.25);c.lineTo(x+s,y+h*0.1);c.lineTo(x+s,y+h*0.9);c.lineTo(x+s*0.72,y+h*0.75);c.closePath();c.fill();break;
+    case 'barrera':
+      c.fillStyle=col+'33';c.beginPath();c.rect(x,y+h*0.5,s*0.18,h*0.5);c.fill();c.stroke();
+      c.lineWidth=2;c.beginPath();c.moveTo(x+s*0.18,y+h*0.5);c.lineTo(x+s*0.9,y+h*0.12);c.stroke();
+      c.lineWidth=1.2;
+      [0.3,0.55,0.75].forEach(f=>{c.fillStyle=f<0.5?col:'#1e2330';c.beginPath();c.rect(x+s*f,y+h*(0.5-f*0.3),s*0.13,h*0.15);c.fill();});break;
+    case 'control_acceso':
+      c.beginPath();c.arc(x+s/2,y+h*0.38,h*0.35,0,Math.PI*2);c.stroke();
+      c.fillStyle=col;c.beginPath();c.arc(x+s/2,y+h*0.38,h*0.12,0,Math.PI*2);c.fill();
+      c.beginPath();c.moveTo(x+s*0.15,y+h);c.quadraticCurveTo(x+s/2,y+h*0.6,x+s*0.85,y+h);c.stroke();break;
+    case 'api_call':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x,y+h*0.15,s*0.38,h*0.7);c.fill();c.stroke();
+      c.fillStyle=col+'22';c.beginPath();c.rect(x+s*0.62,y+h*0.15,s*0.38,h*0.7);c.fill();c.stroke();
+      c.setLineDash([2,2]);c.beginPath();c.moveTo(x+s*0.38,y+h/2);c.lineTo(x+s*0.62,y+h/2);c.stroke();c.setLineDash([]);
+      c.beginPath();c.moveTo(x+s*0.5,y+h*0.28);c.lineTo(x+s*0.62,y+h/2);c.lineTo(x+s*0.5,y+h*0.72);c.stroke();break;
+    case 'webhook':
+      c.fillStyle=col;c.beginPath();c.arc(x+s*0.15,y+h/2,h*0.2,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(x+s*0.85,y+h/2,h*0.2,0,Math.PI*2);c.fill();
+      c.beginPath();c.moveTo(x+s*0.35,y+h/2);c.bezierCurveTo(x+s*0.5,y,x+s*0.5,y,x+s*0.65,y+h/2);c.stroke();
+      c.beginPath();c.moveTo(x+s*0.35,y+h/2);c.bezierCurveTo(x+s*0.5,y+h,x+s*0.5,y+h,x+s*0.65,y+h/2);c.stroke();break;
+    case 'db_query':
+      c.fillStyle=col+'22';
+      c.beginPath();c.ellipse(x+s/2,y+h*0.22,s*0.45,h*0.22,0,0,Math.PI*2);c.fill();c.stroke();
+      c.beginPath();c.moveTo(x+s*0.05,y+h*0.22);c.lineTo(x+s*0.05,y+h*0.78);c.moveTo(x+s*0.95,y+h*0.22);c.lineTo(x+s*0.95,y+h*0.78);c.stroke();
+      c.beginPath();c.ellipse(x+s/2,y+h*0.78,s*0.45,h*0.22,0,0,Math.PI*2);c.fill();c.stroke();
+      c.setLineDash([2,2]);c.beginPath();c.ellipse(x+s/2,y+h*0.5,s*0.45,h*0.22,0,0,Math.PI*2);c.stroke();c.setLineDash([]);break;
+    case 'validacion_sys':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x,y,s,h);c.fill();c.stroke();
+      c.lineWidth=1.8;c.beginPath();c.moveTo(x+s*0.18,y+h/2);c.lineTo(x+s*0.38,y+h*0.72);c.lineTo(x+s*0.65,y+h*0.22);c.stroke();break;
+    case 'sms_alert':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x,y+h*0.05,s,h*0.72);c.fill();c.stroke();
+      c.beginPath();c.moveTo(x+s*0.2,y+h*0.77);c.lineTo(x+s*0.1,y+h);c.lineTo(x+s*0.5,y+h*0.77);c.closePath();c.fill();
+      c.font=`600 ${h*0.42}px sans-serif`;c.textAlign='center';c.fillStyle=col;c.fillText('SMS',x+s/2,y+h*0.5);break;
+    case 'notificacion':
+      c.beginPath();c.moveTo(x+s/2,y);c.lineTo(x+s/2,y+h*0.15);
+      c.moveTo(x+s/2,y+h*0.15);c.bezierCurveTo(x+s*0.1,y+h*0.15,x+s*0.05,y+h*0.45,x+s*0.05,y+h*0.65);c.lineTo(x,y+h*0.8);c.lineTo(x+s,y+h*0.8);c.lineTo(x+s*0.95,y+h*0.65);
+      c.bezierCurveTo(x+s*0.95,y+h*0.45,x+s*0.9,y+h*0.15,x+s/2,y+h*0.15);c.fill();c.stroke();
+      c.lineWidth=1;c.beginPath();c.moveTo(x+s*0.35,y+h*0.8);c.quadraticCurveTo(x+s/2,y+h,x+s*0.65,y+h*0.8);c.stroke();break;
+    case 'sync_accs':
+      c.beginPath();c.arc(x+s/2,y+h/2,h*0.42,0,Math.PI*2);c.stroke();
+      c.beginPath();c.moveTo(x+s/2,y+h*0.08);c.arc(x+s/2,y+h/2,h*0.42,-Math.PI/2,Math.PI/2);c.stroke();
+      c.lineWidth=1.8;
+      c.beginPath();c.moveTo(x+s*0.32,y+h*0.08);c.lineTo(x+s/2,y+h*0.08);c.lineTo(x+s/2,y+h*0.28);c.stroke();
+      c.beginPath();c.moveTo(x+s*0.68,y+h*0.92);c.lineTo(x+s/2,y+h*0.92);c.lineTo(x+s/2,y+h*0.72);c.stroke();break;
+    case 'evento_sys':
+      c.beginPath();c.moveTo(x+s/2,y);c.lineTo(x+s,y+h);c.lineTo(x,y+h);c.closePath();c.fill();
+      c.strokeStyle='#0f1117';c.lineWidth=1.5;
+      c.beginPath();c.moveTo(x+s/2,y+h*0.35);c.lineTo(x+s/2,y+h*0.65);c.stroke();
+      c.beginPath();c.arc(x+s/2,y+h*0.78,h*0.06,0,Math.PI*2);c.fill();break;
+    case 'kaizen':
+      for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2,b=a+Math.PI/5;const or=h*0.48,ir=h*0.22;if(i===0)c.beginPath();i===0?c.moveTo(x+s/2+or*Math.cos(a),y+h/2+or*Math.sin(a)):null;c.lineTo(x+s/2+or*Math.cos(a),y+h/2+or*Math.sin(a));c.lineTo(x+s/2+ir*Math.cos(b),y+h/2+ir*Math.sin(b));}
+      c.closePath();c.fillStyle=col+'44';c.fill();c.stroke();break;
+    case 'operador':
+      c.beginPath();c.arc(x+s/2,y+h*0.3,h*0.28,0,Math.PI*2);c.fill();c.stroke();
+      c.fillStyle=col+'44';c.beginPath();c.moveTo(x+s*0.1,y+h);c.quadraticCurveTo(x+s/2,y+h*0.55,x+s*0.9,y+h);c.closePath();c.fill();c.stroke();break;
+    case 'inventario':
+      c.fillStyle=col+'22';c.beginPath();c.moveTo(x+s/2,y+h*0.15);c.lineTo(x+s,y+h*0.4);c.lineTo(x+s,y+h);c.lineTo(x,y+h);c.lineTo(x,y+h*0.4);c.closePath();c.fill();c.stroke();
+      c.font=`600 ${h*0.35}px IBM Plex Mono,monospace`;c.textAlign='center';c.fillStyle=col;c.fillText('INV',x+s/2,y+h*0.72);break;
+    case 'push':
+      c.lineWidth=1.8;c.beginPath();c.moveTo(x,y+h/2);c.lineTo(x+s*0.82,y+h/2);c.stroke();
+      c.beginPath();c.moveTo(x+s*0.6,y+h*0.2);c.lineTo(x+s,y+h/2);c.lineTo(x+s*0.6,y+h*0.8);c.stroke();
+      c.fillStyle=col+'44';c.beginPath();c.rect(x,y+h*0.28,s*0.22,h*0.44);c.fill();c.stroke();break;
+    case 'pull':
+      c.lineWidth=1.8;c.setLineDash([3,2]);c.beginPath();c.moveTo(x+s*0.18,y+h/2);c.lineTo(x+s,y+h/2);c.stroke();c.setLineDash([]);
+      c.beginPath();c.moveTo(x+s*0.4,y+h*0.2);c.lineTo(x,y+h/2);c.lineTo(x+s*0.4,y+h*0.8);c.stroke();break;
+    case 'timeline':
+      c.fillStyle=col+'22';c.beginPath();c.rect(x,y+h*0.3,s,h*0.4);c.fill();c.stroke();
+      [0.2,0.5,0.8].forEach(f=>{c.beginPath();c.moveTo(x+s*f,y+h*0.3);c.lineTo(x+s*f,y+h*0.7);c.stroke();});break;
+    default:
+      c.fillStyle=col+'22';c.beginPath();c.rect(x+s*0.1,y+h*0.1,s*0.8,h*0.8);c.fill();
+      c.setLineDash([3,2]);c.stroke();c.setLineDash([]);
+  }
+  c.restore();
+}
+
+function drawNode(n,sel){
+  const c=C(n.type);
+  ctx.save();
+  if(sel){ctx.shadowColor=c.stroke;ctx.shadowBlur=12;}
+  ctx.fillStyle=c.color;ctx.strokeStyle=sel?c.stroke:c.stroke+'88';ctx.lineWidth=sel?1.5:1;
+  rr(ctx,n.x,n.y,n.w,n.h,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+  if(n.actType){const bc={'va':'#3dba7e','nva':'#e05555','nvam':'#f5a623'}[n.actType];if(bc){ctx.fillStyle=bc;rrTop(ctx,n.x,n.y,n.w,4,6);ctx.fill();}}
+  // TAG pill
+  ctx.fillStyle=c.tagC;rr(ctx,n.x+3,n.y+7,26,11,2);ctx.fill();
+  ctx.fillStyle=c.text;ctx.font='500 6.5px IBM Plex Mono,monospace';ctx.textAlign='center';
+  ctx.fillText(c.tag,n.x+16,n.y+15.5);
+  // ICON left side
+  const iSize=Math.min(n.h-22,n.w*0.28,28);
+  const iX=n.x+4, iY=n.y+(n.h-iSize)/2+2;
+  drawIcon(ctx,n.type,iX,iY,iSize,c.stroke);
+  // LABEL right of icon
+  const txtX=n.x+iSize+10, txtW=n.w-iSize-14;
+  ctx.fillStyle=c.text;ctx.font='500 9px IBM Plex Sans,sans-serif';ctx.textAlign='left';
+  const words=n.label.split(' ');let line='',lines=[];
+  for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width>txtW&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=n.y+n.h/2-(lines.length-1)*10/2;
+  lines.forEach((l,i)=>ctx.fillText(l,txtX,sy+i*10,txtW));
+  // CT
+  if(n.ct){ctx.fillStyle=c.stroke+'88';ctx.font='7.5px IBM Plex Mono,monospace';ctx.textAlign='right';ctx.fillText('CT:'+n.ct+'m',n.x+n.w-4,n.y+n.h-3);}
+  // SYS badges
+  if(CFG[n.type]&&CFG[n.type].tag==='SYS'){
+    if(n.inAcCS){ctx.fillStyle='#1a3a6e';rr(ctx,n.x+n.w-42,n.y+4,38,12,3);ctx.fill();ctx.fillStyle='#4a9eff';ctx.font='600 7px IBM Plex Mono,monospace';ctx.textAlign='center';ctx.fillText('ACCS',n.x+n.w-23,n.y+13);}
+    if(n.sysType){ctx.fillStyle=c.stroke+'22';rr(ctx,n.x+3,n.y+n.h-14,Math.min(ctx.measureText(n.sysType).width+10,n.w-6),11,2);ctx.fill();ctx.fillStyle=c.stroke+'cc';ctx.font='7px IBM Plex Mono,monospace';ctx.textAlign='left';ctx.fillText(n.sysType,n.x+6,n.y+n.h-6,n.w-10);}
+  }
+  if(n.waste&&n.waste.length){ctx.fillStyle='#e05555';ctx.beginPath();ctx.arc(n.x+n.w-5,n.y+5,4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 6px sans-serif';ctx.textAlign='center';ctx.fillText(n.waste.length,n.x+n.w-5,n.y+7.5);}
+  if(sel){ctx.fillStyle=c.stroke+'66';ctx.beginPath();ctx.moveTo(n.x+n.w-RSIZE,n.y+n.h);ctx.lineTo(n.x+n.w,n.y+n.h);ctx.lineTo(n.x+n.w,n.y+n.h-RSIZE);ctx.closePath();ctx.fill();}
+  ctx.restore();
+}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();}
+function rrTop(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h);c.lineTo(x,y+h);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();}
+function wrapTxt(c,text,x,y,mw,lh){const ws=text.split(' ');let l='',ls=[];for(const w of ws){const t=l?l+' '+w:w;if(c.measureText(t).width>mw&&l){ls.push(l);l=w;}else l=t;}ls.push(l);const sy=y-(ls.length-1)*lh/2;ls.forEach((ln,i)=>c.fillText(ln,x,sy+i*lh,mw));}
+
+/* ─── CANVAS EVENTS ─── */
+const RSIZE=10; // resize handle px
+let resizing=false, resizeNode=null;
+
+function inResizeHandle(n,x,y){return x>=n.x+n.w-RSIZE&&x<=n.x+n.w&&y>=n.y+n.h-RSIZE&&y<=n.y+n.h;}
+
+canvas.addEventListener('mousedown',e=>{
+  const{x,y}=cp(e),hit=nodeAt(x,y);
+  if(currentTool==='select'){
+    if(hit){
+      selectedNode=hit;
+      if(inResizeHandle(hit,x,y)){resizing=true;resizeNode=hit;}
+      else{isDragging=true;dragOffX=x-hit.x;dragOffY=y-hit.y;}
+      showProps(hit);
+    } else {selectedNode=null;hideProps();}
+    render();
+  } else if(currentTool==='connect'){
+    if(hit){if(!connectFrom)connectFrom=hit;else if(connectFrom!==hit){connections.push({from:connectFrom.id,to:hit.id,type:'push'});connectFrom=null;markDirty();render();}}
+  } else if(currentTool==='note'){addNode('note',x,y);setTool('select');markDirty();}
+});
+
+canvas.addEventListener('mousemove',e=>{
+  const{x,y}=cp(e);
+  if(resizing&&resizeNode){
+    resizeNode.w=Math.max(80,x-resizeNode.x);
+    resizeNode.h=Math.max(40,y-resizeNode.y);
+    render();
+  } else if(isDragging&&selectedNode){
+    selectedNode.x=x-dragOffX;selectedNode.y=y-dragOffY;render();
+  } else {
+    // cursor hint
+    const hit=nodeAt(x,y);
+    if(hit&&inResizeHandle(hit,x,y)) canvas.style.cursor='se-resize';
+    else if(hit) canvas.style.cursor='move';
+    else canvas.style.cursor='default';
+  }
+});
+
+canvas.addEventListener('mouseup',()=>{
+  if((isDragging||resizing)&&selectedNode)markDirty();
+  isDragging=false;resizing=false;resizeNode=null;
+});
+
+canvas.addEventListener('dblclick',e=>{const{x,y}=cp(e),hit=nodeAt(x,y);if(hit){const v=prompt('Etiqueta:',hit.label);if(v!==null){hit.label=v;markDirty();render();}}});
+function cp(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+function nodeAt(x,y){return nodes.slice().reverse().find(n=>x>=n.x&&x<=n.x+n.w&&y>=n.y&&y<=n.y+n.h)||null;}
+
+/* ─── TOOLS ─── */
+function setTool(t){
+  currentTool=t;connectFrom=null;
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('tool-'+t);if(el)el.classList.add('active');
+  const hints={select:'Clic selecciona · doble clic edita · arrastra mueve',connect:'Clic nodo origen → nodo destino',note:'Clic en canvas para añadir nota'};
+  document.getElementById('tool-hint').textContent=hints[t]||'';
+}
+document.addEventListener('keydown',e=>{
+  if((e.key==='Delete'||e.key==='Backspace')&&selectedNode&&document.activeElement===document.body){nodes=nodes.filter(n=>n!==selectedNode);connections=connections.filter(c=>c.from!==selectedNode.id&&c.to!==selectedNode.id);selectedNode=null;hideProps();markDirty();render();}
+  if(e.key==='Escape')setTool('select');
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveData();}
+});
+
+/* ─── PROPS ─── */
+function showProps(n){
+  const isSys=CFG[n.type]&&CFG[n.type].tag==='SYS';
+  const sysBlock=isSys?`
+    <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
+      <div class="prop-lbl">Actividad lógica · Sistema</div>
+      <label style="display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:var(--radius);border:1px solid ${n.inAcCS?'var(--blue-dim)':'var(--border)'};background:${n.inAcCS?'var(--blue-bg)':'var(--bg3)'};cursor:pointer;margin-bottom:5px">
+        <input type="checkbox" ${n.inAcCS?'checked':''} onchange="up('inAcCS',this.checked);showProps(selectedNode)" style="accent-color:var(--blue)">
+        <span style="font-size:10px;font-weight:500;color:${n.inAcCS?'var(--blue)':'var(--text2)'}">Ejecuta en ACCS</span>
+        ${n.inAcCS?'<span style="margin-left:auto;font-size:8px;padding:1px 5px;border-radius:3px;background:var(--blue-dim);color:var(--blue);font-family:IBM Plex Mono,monospace">ACCS</span>':''}
+      </label>
+      <div class="prop-lbl">Sistema / plataforma</div>
+      <input class="prop-inp" value="${n.sysType||''}" placeholder="Ej: ACCS, SAP, TMS, DIAN..." oninput="up('sysType',this.value)">
+    </div>`:'';
+  document.getElementById('node-props').innerHTML=`
+    <div class="prop-lbl">Etiqueta</div><input class="prop-inp" value="${n.label}" oninput="up('label',this.value)">
+    <div class="prop-lbl">Cycle time (min)</div><input class="prop-inp" type="number" value="${n.ct||''}" placeholder="0" oninput="up('ct',this.value)">
+    <div class="prop-lbl">Tipo actividad</div>
+    <select class="prop-inp" onchange="up('actType',this.value)">
+      <option value="" ${!n.actType?'selected':''}>Sin clasificar</option>
+      <option value="va" ${n.actType==='va'?'selected':''}>VA · Agrega valor</option>
+      <option value="nva" ${n.actType==='nva'?'selected':''}>NVA · No agrega valor</option>
+      <option value="nvam" ${n.actType==='nvam'?'selected':''}>NVA-N · Necesaria</option>
+    </select>
+    ${sysBlock}
+    <div class="prop-lbl" style="margin-top:8px">Notas del nodo</div>
+    <textarea class="note-area" rows="2" oninput="up('notes',this.value)">${n.notes||''}</textarea>
+    <div class="prop-lbl" style="margin-top:8px">Waste en nodo</div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:2px">${['Espera','Movimiento','Transporte','Defectos','Sobreproceso'].map(w=>`<span style="font-size:9px;padding:2px 5px;border-radius:3px;cursor:pointer;border:1px solid var(--border2);background:${(n.waste||[]).includes(w)?'var(--red-dim)':'var(--bg3)'};color:${(n.waste||[]).includes(w)?'var(--red)':'var(--text3)'}" onclick="toggleNodeWaste('${w}')">${w}</span>`).join('')}</div>
+    <button class="act-btn mute" style="margin-top:8px" onclick="deleteSelected()">Eliminar nodo</button>`;
+}
+function hideProps(){document.getElementById('node-props').innerHTML='<div style="font-size:10px;color:var(--text3)">Selecciona un nodo</div>';}
+function up(k,v){if(!selectedNode)return;selectedNode[k]=v;markDirty();render();}
+function toggleNodeWaste(w){if(!selectedNode)return;if(!selectedNode.waste)selectedNode.waste=[];const i=selectedNode.waste.indexOf(w);if(i>=0)selectedNode.waste.splice(i,1);else selectedNode.waste.push(w);showProps(selectedNode);markDirty();render();}
+function deleteSelected(){if(selectedNode){nodes=nodes.filter(n=>n!==selectedNode);connections=connections.filter(c=>c.from!==selectedNode.id&&c.to!==selectedNode.id);selectedNode=null;hideProps();markDirty();render();}}
+function clearAll(){if(nodes.length===0||confirm('¿Limpiar canvas?')){nodes=[];connections=[];selectedNode=null;hideProps();markDirty();render();}}
+
+/* ─── WASTE SIDEBAR ─── */
+function toggleWaste(el){const w=el.dataset.w;if(el.classList.contains('on')){el.classList.remove('on');wasteActive=wasteActive.filter(x=>x!==w);}else{el.classList.add('on');wasteActive.push(w);}markDirty();}
+
+/* ─── TABS ─── */
+function switchTab(t){
+  ['vsm','layout','mapa'].forEach(id=>{document.getElementById('tab-'+id).classList.toggle('active',id===t);});
+  document.getElementById('t-vsm').style.display=t==='vsm'?'flex':'none';
+  document.getElementById('t-layout').classList.toggle('on',t==='layout');
+  document.getElementById('t-mapa').classList.toggle('on',t==='mapa');
+  document.getElementById('vsm-tools').style.display=t==='vsm'?'flex':'none';
+  if(t==='layout') setTimeout(initLayout,0);
+}
+
+/* ─── LAYOUT CANVAS ─── */
+const ZONES=[
+  /* ── AIRSIDE (franja delgada referencia) ── */
+  {id:'airside',label:'AIRSIDE — Plataforma aeronaves (referencia)',x:0,y:0,w:1400,h:36,fill:'#081510',stroke:'#1D9E75',text:'#3dba7e',sub:''},
+
+  /* ── TERMINALES: franjas delgadas de referencia ── */
+  {id:'tc1',label:'TC1 · 24.797 m²  |  Nac/Int',x:0,y:44,w:450,h:30,fill:'#0a1828',stroke:'#185FA5',text:'#378ADD',sub:''},
+  {id:'tc2',label:'TC2 · 23.624 m²  |  Internacional',x:460,y:44,w:470,h:30,fill:'#081510',stroke:'#0F6E56',text:'#1D9E75',sub:''},
+  {id:'tc3',label:'TC3 · 18.129 m²  |  Especial / Nacional',x:940,y:44,w:450,h:30,fill:'#120e00',stroke:'#854F0B',text:'#BA7517',sub:''},
+
+  /* ── MUELLES DOCKING (zona clave terrestre) ── */
+  {id:'docks_all',label:'ZONA DE MUELLES — 214 muelles docking (TC1·TC2·TC3)',x:0,y:82,w:1390,h:80,fill:'#0d1428',stroke:'#534AB7',text:'#8b6fff',sub:'Asignación via ACCS · SMS al conductor · GoPass valida acceso al muelle'},
+
+  /* ── OPERACIONES TERRESTRES (zona central y grande) ── */
+  {id:'ops_screening',label:'Screening / Pesaje / Inspección física',x:0,y:170,w:340,h:220,fill:'#1a0a0a',stroke:'#e05555',text:'#e05555',sub:'X-Ray · Báscula · DIAN · Aforo'},
+  {id:'ops_recepcion',label:'Recepción y verificación documental',x:350,y:170,w:340,h:220,fill:'#0d1428',stroke:'#4a9eff',text:'#4a9eff',sub:'AWB · Manifiesto · e-Docket · POD · EDI'},
+  {id:'ops_almacen',label:'Almacenamiento / Paletización / ULD',x:700,y:170,w:340,h:220,fill:'#0a1a10',stroke:'#3dba7e',text:'#3dba7e',sub:'Bodega · Cuartos fríos · Buffer · DG'},
+  {id:'ops_especial',label:'Carga especial / DG / Perecederos',x:1050,y:170,w:340,h:220,fill:'#120e00',stroke:'#f5a623',text:'#f5a623',sub:'OOG · Valuables · Flowers · Pharma'},
+
+  /* ── PARKING Y COLA (zona terrestre) ── */
+  {id:'park_cola',label:'ZONA DE PARKING Y COLA VEHICULAR',x:0,y:398,w:1390,h:90,fill:'#111114',stroke:'#3d4560',text:'#6b7698',sub:'Cola entrada · Asignación turno ACCS · Espera slot · Báscula vehicular'},
+
+  /* ── CAC ── */
+  {id:'cac',label:'CAC — Centro Administrativo · OPAIN · Aerocivil · DIAN · Control Tower ACCS',x:0,y:496,w:1390,h:36,fill:'#1a1a20',stroke:'#3d4560',text:'#8892aa',sub:''},
+
+  /* ── CALLE 26 ── */
+  {id:'calle26',label:'CALLE 26 → Vía de acceso principal (Occidente → Oriente)',x:0,y:540,w:1400,h:32,fill:'#1a1000',stroke:'#3d2a00',text:'#f5a623'},
+
+  /* ── ACCESO GOPASS + PUERTAS ── */
+  {id:'gate1',label:'PUERTA TC1',x:80,y:580,w:160,h:60,fill:'#1f0a0a',stroke:'#e05555',text:'#e05555'},
+  {id:'gate2',label:'PUERTA TC2',x:550,y:580,w:160,h:60,fill:'#1f0a0a',stroke:'#e05555',text:'#e05555'},
+  {id:'gate3',label:'PUERTA TC3',x:1020,y:580,w:160,h:60,fill:'#1f0a0a',stroke:'#e05555',text:'#e05555'},
+];
+
+function initLayout(){
+  LC=document.getElementById('layout-canvas');
+  LCX=LC.getContext('2d');
+  LC.width=1400;LC.height=660;LC.style.minWidth='1400px';
+  if(!layoutInited){setupLayoutEvents();layoutInited=true;}
+  // Inyectar nodos por defecto solo si el layout está vacío
+  if(layoutNodes.length===0) injectDefaultNodes();
+  renderLayout();
+}
+
+function injectDefaultNodes(){
+  const mk=(type,label,x,y,w,h)=>({id:Date.now()+Math.random(),type,label,x,y,w,h,ct:'',actType:'',waste:[],notes:''});
+  // Screening / Pesaje / Inspección (zona roja x:0 y:170 w:340 h:220)
+  layoutNodes.push(mk('screening',  'X-Ray',             8,  178, 324, 34));
+  layoutNodes.push(mk('pesaje',     'Báscula',           8,  218, 324, 34));
+  layoutNodes.push(mk('inspeccion', 'DIAN · Inspección', 8,  258, 324, 34));
+  layoutNodes.push(mk('inspeccion', 'Aforo',             8,  298, 324, 34));
+  // Recepción documental (zona azul x:350 y:170 w:340 h:220)
+  layoutNodes.push(mk('awb',          'AWB / Manifiesto', 358, 178, 324, 34));
+  layoutNodes.push(mk('edocket',      'e-Docket',         358, 218, 324, 34));
+  layoutNodes.push(mk('pod',          'POD · EDI',        358, 258, 324, 34));
+  layoutNodes.push(mk('prevalidacion','Prevalidación',    358, 298, 324, 34));
+  // Almacenamiento (zona verde x:700 y:170 w:340 h:220)
+  layoutNodes.push(mk('almacenamiento','Bodega general',    708, 178, 324, 34));
+  layoutNodes.push(mk('almacenamiento','Cuartos fríos',     708, 218, 324, 34));
+  layoutNodes.push(mk('paletizacion', 'Paletización / ULD',708, 258, 324, 34));
+  layoutNodes.push(mk('gen_fisico',   'Buffer / Tránsito', 708, 298, 324, 34));
+  // Carga especial (zona ámbar x:1050 y:170 w:340 h:220)
+  layoutNodes.push(mk('gen_fisico',   'DG / Peligrosa',    1058,178, 324, 34));
+  layoutNodes.push(mk('gen_fisico',   'OOG · Valuables',   1058,218, 324, 34));
+  layoutNodes.push(mk('descargue',    'Perecederos / Flores',1058,258,324, 34));
+  layoutNodes.push(mk('gen_fisico',   'Farmacéuticos',     1058,298, 324, 34));
+  // GoPass + Puertas (zona inferior)
+  layoutNodes.push(mk('gopass_in',  'GoPass RFID · Entrada TC1', 82,  588, 150, 40));
+  layoutNodes.push(mk('gopass_in',  'GoPass RFID · Entrada TC2', 552, 588, 150, 40));
+  layoutNodes.push(mk('gopass_in',  'GoPass RFID · Entrada TC3', 1022,588, 150, 40));
+  layoutNodes.push(mk('lpr',        'Cámara LPR · TC1',          248, 588, 90,  40));
+  layoutNodes.push(mk('lpr',        'Cámara LPR · TC2',          718, 588, 90,  40));
+  layoutNodes.push(mk('lpr',        'Cámara LPR · TC3',          1188,588, 90,  40));
+}
+
+function renderLayout(){
+  if(!LCX)return;
+  LCX.clearRect(0,0,1400,660);
+  drawLayoutBg();
+  layoutConns.forEach(drawLConn);
+  layoutNodes.forEach(n=>drawLNode(n));
+  document.getElementById('layout-status').textContent=layoutNodes.length===0?'Layout vacío — arrastra elementos del sidebar':layoutNodes.length+' elementos mapeados';
+}
+
+function drawLayoutBg(){
+  ZONES.forEach(z=>{
+    LCX.fillStyle=z.fill;LCX.strokeStyle=z.stroke;LCX.lineWidth=1;
+    lcRR(z.x,z.y,z.w,z.h,4);LCX.fill();LCX.stroke();
+    LCX.fillStyle=z.text;LCX.font='600 10px IBM Plex Mono,monospace';LCX.textAlign='left';
+    LCX.fillText(z.label,z.x+8,z.y+14,z.w-14);
+    if(z.sub&&z.h>50){LCX.font='400 8.5px sans-serif';LCX.fillStyle=z.text+'88';LCX.fillText(z.sub,z.x+8,z.y+28,z.w-14);}
+
+    /* muelles: zona única ancha */
+    if(z.id==='docks_all'){
+      const cols=Math.floor((z.w-16)/24);
+      for(let i=0;i<Math.min(cols,56);i++){
+        const dx=z.x+8+i*24,dy=z.y+36;
+        LCX.fillStyle='#2a1a5e';LCX.strokeStyle='#534AB7';LCX.lineWidth=0.5;
+        lcRR(dx,dy,20,32,3);LCX.fill();LCX.stroke();
+        LCX.fillStyle='#8b6fff';LCX.font='500 6px IBM Plex Mono,monospace';LCX.textAlign='center';
+        LCX.fillText('D'+(i+1),dx+10,dy+13);
+        /* camión en algunos muelles */
+        if(i%3===0){
+          LCX.fillStyle='#1e2330';lcRR(dx+1,dy+15,18,15,2);LCX.fill();
+          LCX.fillStyle='#3d4560';LCX.fillRect(dx+2,dy+16,11,8);
+          LCX.fillStyle='#252a38';LCX.fillRect(dx+13,dy+18,5,6);
+        }
+      }
+    }
+
+    /* parking: camiones en cola */
+    if(z.id==='park_cola'){
+      /* carril de cola con camiones */
+      for(let i=0;i<16;i++){
+        const px=z.x+14+i*84,py=z.y+22;
+        LCX.fillStyle='#1e2330';LCX.strokeStyle='#3d4560';LCX.lineWidth=0.5;
+        lcRR(px,py,76,40,4);LCX.fill();LCX.stroke();
+        drawTruck(px+4,py+7,68,26);
+        LCX.fillStyle='#4d5670';LCX.font='6px IBM Plex Mono,monospace';LCX.textAlign='center';
+        LCX.fillText('#'+(i+1),px+38,py+50);
+      }
+      /* flechas de flujo cola */
+      LCX.strokeStyle='#f5a623';LCX.lineWidth=1.5;LCX.setLineDash([6,4]);
+      LCX.beginPath();LCX.moveTo(z.x+8,z.y+68);LCX.lineTo(z.x+z.w-8,z.y+68);LCX.stroke();
+      LCX.setLineDash([]);
+      LCX.fillStyle='#f5a623';
+      for(let ax=z.x+120;ax<z.x+z.w-8;ax+=200){
+        LCX.beginPath();LCX.moveTo(ax,z.y+62);LCX.lineTo(ax+14,z.y+68);LCX.lineTo(ax,z.y+74);LCX.closePath();LCX.fill();
+      }
+      LCX.fillStyle='#f5a623';LCX.font='500 8px IBM Plex Mono,monospace';LCX.textAlign='right';
+      LCX.fillText('FLUJO COLA →',z.x+z.w-12,z.y+82);
+    }
+
+    /* puertas */
+    if(z.id.startsWith('gate')){
+      LCX.fillStyle='#e05555';LCX.font='700 9px IBM Plex Mono,monospace';LCX.textAlign='center';
+      LCX.fillText('◉ '+z.label,z.x+z.w/2,z.y+16);
+      const subs={gate1:'Token · GoPass · LPR',gate2:'Slot req · QR · DIAN',gate3:'DG checklist · OOG'};
+      LCX.font='400 8px sans-serif';LCX.fillStyle='#a32d2d';
+      LCX.fillText(subs[z.id]||'',z.x+z.w/2,z.y+29);LCX.fillText('24/7',z.x+z.w/2,z.y+44);
+    }
+
+    /* airside: aviones */
+    if(z.id==='airside'){for(let i=0;i<5;i++)drawPlane(70+i*270,18);}
+
+    /* calle 26 */
+    if(z.id==='calle26'){
+      LCX.strokeStyle='#f5a623';LCX.lineWidth=1;LCX.setLineDash([8,6]);
+      LCX.beginPath();LCX.moveTo(20,556);LCX.lineTo(1380,556);LCX.stroke();LCX.setLineDash([]);
+      for(let x=80;x<1380;x+=110){LCX.fillStyle='#f5a623';LCX.font='10px sans-serif';LCX.textAlign='center';LCX.fillText('→',x,562);}
+    }
+  });
+
+  /* separadores verticales entre zonas ops */
+  LCX.setLineDash([4,3]);LCX.strokeStyle='#2e3448';LCX.lineWidth=0.5;
+  [350,700,1050].forEach(x=>{LCX.beginPath();LCX.moveTo(x,170);LCX.lineTo(x,390);LCX.stroke();});
+  LCX.setLineDash([]);
+
+  /* GoPass readers + LPR en puertas */
+  drawGopass(82,582,'TAG IN','#8b6fff');
+  drawGopass(190,582,'TAG OUT','#3dba7e');
+  drawGopass(552,582,'TAG IN','#8b6fff');
+  drawGopass(660,582,'TAG OUT','#3dba7e');
+  drawGopass(1022,582,'TAG IN','#8b6fff');
+  drawGopass(1130,582,'TAG OUT','#3dba7e');
+  drawLPR(250,585);drawLPR(722,585);drawLPR(1192,585);
+
+  /* etiqueta de ayuda */
+  LCX.fillStyle='#4a9eff';LCX.font='500 9px IBM Plex Mono,monospace';LCX.textAlign='left';
+  LCX.fillText('← Arrastra nodos del sidebar a la zona del proceso correspondiente',10,650);
+}
+
+function drawTruck(x,y,w,h){
+  LCX.save();
+  LCX.fillStyle='#3d4560';LCX.strokeStyle='#6b7698';LCX.lineWidth=0.5;
+  LCX.beginPath();LCX.rect(x,y+h*0.2,w*0.62,h*0.62);LCX.fill();LCX.stroke();
+  LCX.fillStyle='#252a38';LCX.beginPath();LCX.rect(x+w*0.62,y+h*0.35,w*0.38,h*0.48);LCX.fill();LCX.stroke();
+  LCX.fillStyle='#4a9eff';LCX.fillRect(x+w*0.64,y+h*0.37,w*0.32,h*0.18);
+  LCX.fillStyle='#1a1a1a';
+  LCX.beginPath();LCX.arc(x+w*0.18,y+h,h*0.22,0,Math.PI*2);LCX.fill();
+  LCX.beginPath();LCX.arc(x+w*0.72,y+h,h*0.22,0,Math.PI*2);LCX.fill();
+  LCX.restore();
+}
+
+function drawPlane(x,y){
+  LCX.save();LCX.fillStyle='#3dba7e';LCX.strokeStyle='#1D9E75';LCX.lineWidth=0.5;
+  LCX.beginPath();LCX.ellipse(x,y,20,5,0,0,Math.PI*2);LCX.fill();LCX.stroke();
+  LCX.beginPath();LCX.moveTo(x-8,y);LCX.lineTo(x-18,-8+y);LCX.lineTo(x-13,-8+y);LCX.lineTo(x-4,y);LCX.closePath();LCX.fill();
+  LCX.beginPath();LCX.moveTo(x-8,y);LCX.lineTo(x-18,8+y);LCX.lineTo(x-13,8+y);LCX.lineTo(x-4,y);LCX.closePath();LCX.fill();
+  LCX.restore();
+}
+
+function drawGopass(x,y,label,col){
+  LCX.save();LCX.fillStyle='#1a0a2e';LCX.strokeStyle=col;LCX.lineWidth=1;
+  lcRR(x,y,80,36,5);LCX.fill();LCX.stroke();
+  LCX.fillStyle=col;LCX.font='500 6px IBM Plex Mono,monospace';LCX.textAlign='center';
+  LCX.fillText('GOPASS',x+40,y+11);LCX.fillText('RFID',x+40,y+20);
+  const cx=x+40,cy=y+31;
+  for(let r=3;r<=10;r+=3.5){LCX.beginPath();LCX.arc(cx,cy,r,-Math.PI*0.9,Math.PI*(-0.1));LCX.strokeStyle=col;LCX.lineWidth=0.7;LCX.stroke();}
+  LCX.fillStyle=col;LCX.font='400 6px sans-serif';LCX.fillText(label,x+40,y+44);
+  LCX.restore();
+}
+
+function drawLPR(x,y){
+  LCX.save();LCX.fillStyle='#1a1000';LCX.strokeStyle='#f5a623';LCX.lineWidth=0.8;
+  lcRR(x,y,24,14,2);LCX.fill();LCX.stroke();
+  LCX.fillStyle='#f5a623';LCX.font='500 6px IBM Plex Mono,monospace';LCX.textAlign='center';LCX.fillText('LPR',x+12,y+10);
+  LCX.beginPath();LCX.moveTo(x+24,y+3);LCX.lineTo(x+30,y+1);LCX.lineTo(x+30,y+12);LCX.lineTo(x+24,y+10);LCX.closePath();LCX.fillStyle='#f5a623';LCX.fill();
+  LCX.restore();
+}
+
+function lcRR(x,y,w,h,r){LCX.beginPath();LCX.moveTo(x+r,y);LCX.lineTo(x+w-r,y);LCX.quadraticCurveTo(x+w,y,x+w,y+r);LCX.lineTo(x+w,y+h-r);LCX.quadraticCurveTo(x+w,y+h,x+w-r,y+h);LCX.lineTo(x+r,y+h);LCX.quadraticCurveTo(x,y+h,x,y+h-r);LCX.lineTo(x,y+r);LCX.quadraticCurveTo(x,y,x+r,y);LCX.closePath();}
+
+function drawLConn(c){
+  const a=layoutNodes.find(n=>n.id===c.from),b=layoutNodes.find(n=>n.id===c.to);if(!a||!b)return;
+  LCX.save();LCX.strokeStyle='#4a9eff';LCX.lineWidth=1.5;LCX.beginPath();LCX.moveTo(a.x+a.w/2,a.y+a.h/2);LCX.lineTo(b.x+b.w/2,b.y+b.h/2);LCX.stroke();
+  const ang=Math.atan2(b.y+b.h/2-a.y-a.h/2,b.x+b.w/2-a.x-a.w/2),bx=b.x+b.w/2,by=b.y+b.h/2;
+  LCX.fillStyle='#4a9eff';LCX.beginPath();LCX.moveTo(bx,by);LCX.lineTo(bx-10*Math.cos(ang-0.35),by-10*Math.sin(ang-0.35));LCX.lineTo(bx-10*Math.cos(ang+0.35),by-10*Math.sin(ang+0.35));LCX.closePath();LCX.fill();LCX.restore();
+}
+
+function drawLNode(n){
+  const c=C(n.type);
+  LCX.save();LCX.fillStyle=c.color;LCX.strokeStyle=c.stroke+'99';LCX.lineWidth=1;
+  lcRR(n.x,n.y,n.w,n.h,5);LCX.fill();LCX.stroke();
+  if(n.actType){const bc={'va':'#3dba7e','nva':'#e05555','nvam':'#f5a623'}[n.actType];if(bc){LCX.fillStyle=bc;LCX.beginPath();LCX.moveTo(n.x+4,n.y);LCX.lineTo(n.x+n.w-4,n.y);LCX.quadraticCurveTo(n.x+n.w,n.y,n.x+n.w,n.y+4);LCX.lineTo(n.x+n.w,n.y+3);LCX.lineTo(n.x,n.y+3);LCX.lineTo(n.x,n.y+4);LCX.quadraticCurveTo(n.x,n.y,n.x+4,n.y);LCX.closePath();LCX.fill();}}
+  // TAG pill
+  LCX.fillStyle=c.tagC;lcRR(n.x+3,n.y+4,22,9,2);LCX.fill();
+  LCX.fillStyle=c.text;LCX.font='500 5.5px IBM Plex Mono,monospace';LCX.textAlign='center';
+  LCX.fillText(c.tag,n.x+14,n.y+11);
+  // ICON
+  const iSize=Math.min(n.h-14,n.w*0.28,24);
+  const iX=n.x+3,iY=n.y+(n.h-iSize)/2+1;
+  drawIcon(LCX,n.type,iX,iY,iSize,c.stroke);
+  // LABEL
+  const txtX=n.x+iSize+7,txtW=n.w-iSize-10;
+  LCX.fillStyle=c.text;LCX.font='500 8.5px IBM Plex Sans,sans-serif';LCX.textAlign='left';
+  const ws=n.label.split(' ');let line='',ls=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(LCX.measureText(t).width>txtW&&line){ls.push(line);line=w;}else line=t;}ls.push(line);
+  const sy=n.y+n.h/2-(ls.length-1)*9/2;
+  ls.forEach((l,i)=>LCX.fillText(l,txtX,sy+i*9,txtW));
+  if(n.ct){LCX.fillStyle=c.stroke+'88';LCX.font='7px IBM Plex Mono,monospace';LCX.textAlign='right';LCX.fillText('CT:'+n.ct+'m',n.x+n.w-3,n.y+n.h-2);}
+  // resize handle
+  LCX.fillStyle=c.stroke+'55';
+  LCX.beginPath();LCX.moveTo(n.x+n.w-RSIZE,n.y+n.h);LCX.lineTo(n.x+n.w,n.y+n.h);LCX.lineTo(n.x+n.w,n.y+n.h-RSIZE);LCX.closePath();LCX.fill();
+  LCX.restore();
+}
+
+function setupLayoutEvents(){
+  const scroll=document.getElementById('layout-scroll');
+  let lResizing=false, lResizeNode=null;
+
+  function lcp(e){const r=LC.getBoundingClientRect();return{x:e.clientX-r.left+scroll.scrollLeft,y:e.clientY-r.top+scroll.scrollTop};}
+  function lNodeAt(x,y){return layoutNodes.slice().reverse().find(n=>x>=n.x&&x<=n.x+n.w&&y>=n.y&&y<=n.y+n.h)||null;}
+  function inLResize(n,x,y){return x>=n.x+n.w-RSIZE&&x<=n.x+n.w&&y>=n.y+n.h-RSIZE&&y<=n.y+n.h;}
+
+  LC.addEventListener('dragover',e=>e.preventDefault());
+  LC.addEventListener('drop',e=>{
+    e.preventDefault();if(!dragPayload)return;
+    const{x,y}=lcp(e);const c=C(dragPayload.type);
+    layoutNodes.push({id:Date.now()+Math.random(),type:dragPayload.type,x:Math.max(0,x-55),y:Math.max(0,y-24),w:110,h:46,label:c.label,ct:'',actType:'',waste:[]});
+    dragPayload=null;markDirty();renderLayout();
+  });
+
+  LC.addEventListener('mousedown',e=>{
+    const{x,y}=lcp(e);const hit=lNodeAt(x,y);
+    if(hit){
+      if(inLResize(hit,x,y)){lResizing=true;lResizeNode=hit;}
+      else{layoutDragging=hit;layoutDragOff={x:x-hit.x,y:y-hit.y};}
+    }
+  });
+
+  LC.addEventListener('mousemove',e=>{
+    const{x,y}=lcp(e);
+    if(lResizing&&lResizeNode){
+      lResizeNode.w=Math.max(70,x-lResizeNode.x);
+      lResizeNode.h=Math.max(36,y-lResizeNode.y);
+      renderLayout();
+    } else if(layoutDragging){
+      layoutDragging.x=Math.max(0,x-layoutDragOff.x);
+      layoutDragging.y=Math.max(0,y-layoutDragOff.y);
+      renderLayout();
+    } else {
+      const hit=lNodeAt(x,y);
+      if(hit&&inLResize(hit,x,y)) LC.style.cursor='se-resize';
+      else if(hit) LC.style.cursor='move';
+      else LC.style.cursor='crosshair';
+    }
+  });
+
+  LC.addEventListener('mouseup',()=>{
+    if((layoutDragging||lResizing)&&(layoutDragging||lResizeNode))markDirty();
+    layoutDragging=null;lResizing=false;lResizeNode=null;
+  });
+
+  LC.addEventListener('dblclick',e=>{
+    const{x,y}=lcp(e);const hit=lNodeAt(x,y);
+    if(hit){const v=prompt('Etiqueta:',hit.label);if(v!==null){hit.label=v;markDirty();renderLayout();}}
+  });
+
+  LC.addEventListener('contextmenu',e=>{
+    e.preventDefault();const{x,y}=lcp(e);const hit=lNodeAt(x,y);
+    if(hit&&confirm('Eliminar "'+hit.label+'"?')){
+      layoutNodes=layoutNodes.filter(n=>n!==hit);
+      layoutConns=layoutConns.filter(c=>c.from!==hit.id&&c.to!==hit.id);
+      markDirty();renderLayout();
+    }
+  });
+}
+function clearLayout(){
+  if(!confirm('¿Limpiar layout? Los nodos editables se borrarán.'))return;
+  layoutNodes=[];layoutConns=[];
+  if(confirm('¿Restaurar nodos por defecto?'))injectDefaultNodes();
+  markDirty();renderLayout();
+}
+
+/* ─── TEMPLATE AS-IS ─── */
+function loadTemplate(){
+  if(nodes.length>0&&!confirm('¿Reemplazar canvas con plantilla As-Is?'))return;
+  nodes=[];connections=[];
+  const tpl=[
+    {type:'gopass_in',x:20,y:60,label:'GoPass RFID Entrada',actType:'nvam'},
+    {type:'lpr',x:160,y:60,label:'LPR Lectura placa',actType:'nvam'},
+    {type:'barrera',x:300,y:60,label:'Barrera TC1/TC2/TC3',actType:'nvam'},
+    {type:'queue',x:440,y:60,label:'Cola entrada',actType:'nva',ct:'25'},
+    {type:'turno',x:580,y:60,label:'Asignación turno',actType:'nvam',ct:'8'},
+    {type:'awb',x:580,y:170,label:'Prevalidación AWB',actType:'va',ct:'10'},
+    {type:'slot',x:720,y:60,label:'Gestión slot ACCS',actType:'va',ct:'6'},
+    {type:'sms_alert',x:720,y:170,label:'SMS muelle asignado',actType:'va'},
+    {type:'docking',x:860,y:60,label:'Docking / Muelle',actType:'va',ct:'5'},
+    {type:'screening',x:860,y:170,label:'Screening X-Ray',actType:'nvam',ct:'15'},
+    {type:'descargue',x:1000,y:60,label:'Descargue mercancía',actType:'va',ct:'35'},
+    {type:'inspeccion',x:1000,y:170,label:'Inspección aduana',actType:'nvam',ct:'30'},
+    {type:'edocket',x:860,y:280,label:'e-Docket / POD',actType:'va',ct:'5'},
+    {type:'gopass_out',x:1000,y:280,label:'GoPass RFID Salida',actType:'nvam'},
+    {type:'salida',x:860,y:390,label:'Salida terminal',actType:'nvam',ct:'5'},
+  ];
+  tpl.forEach(t=>nodes.push({id:Date.now()+Math.random(),...t,w:120,h:56,ct:t.ct||'',waste:[],notes:''}));
+  const ids=nodes.map(n=>n.id);
+  [[0,1],[1,2],[2,3],[3,4],[4,6],[6,8],[8,10],[10,12],[12,14]].forEach(([a,b])=>connections.push({from:ids[a],to:ids[b],type:'push'}));
+  [[4,5],[6,7],[8,9],[10,11]].forEach(([a,b])=>connections.push({from:ids[a],to:ids[b],type:'pull'}));
+  selectedNode=null;hideProps();markDirty();render();
+}
+
+/* ─── SAVE / LOAD / EXPORT ─── */
+function markDirty(){dirty=true;const el=document.getElementById('save-ind');el.textContent='cambios sin guardar';el.className='save-ind';}
+function saveData(){
+  localStorage.setItem('vsm_accs_v5',JSON.stringify({nodes,connections,wasteActive,layoutNodes,layoutConns,notes:document.getElementById('notes-area').value}));
+  const el=document.getElementById('save-ind');el.textContent='✓ guardado '+new Date().toLocaleTimeString();el.className='save-ind ok';dirty=false;
+}
+function exportHTML(){
+  const state=JSON.stringify({nodes,connections,wasteActive,layoutNodes,layoutConns,notes:document.getElementById('notes-area').value});
+  const esc=state.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+  const html=document.documentElement.outerHTML.replace('</body>',`<script>window.addEventListener('DOMContentLoaded',()=>{const d=JSON.parse(\`${esc}\`);nodes=d.nodes;connections=d.connections;wasteActive=d.wasteActive||[];layoutNodes=d.layoutNodes||[];layoutConns=d.layoutConns||[];document.getElementById('notes-area').value=d.notes||'';document.querySelectorAll('.waste-tag').forEach(el=>{el.classList.toggle('on',wasteActive.includes(el.dataset.w));});render();});<\/script></body>`);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='vsm_accs_asis_'+new Date().toISOString().slice(0,10)+'.html';a.click();
+}
+
+/* ─── INIT ─── */
+const saved=localStorage.getItem('vsm_accs_v5');
+if(saved){try{const d=JSON.parse(saved);nodes=d.nodes||[];connections=d.connections||[];wasteActive=d.wasteActive||[];layoutNodes=d.layoutNodes||[];layoutConns=d.layoutConns||[];document.getElementById('notes-area').value=d.notes||'';document.querySelectorAll('.waste-tag').forEach(el=>{el.classList.toggle('on',wasteActive.includes(el.dataset.w));});}catch(e){}}
+render();
+</script>
+</body>
+</html>
