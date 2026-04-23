@@ -317,7 +317,7 @@ select.prop-inp option{background:var(--bg3)}
             <div class="tc-zone" style="border-color:#042C53;background:#020f1f"><div class="tc-zi" style="background:#042C53;border:1px solid #85B7EB"></div><span class="tc-zn" style="color:var(--text3)">Cuartos fríos</span><span class="tc-zs">4 · −20°C</span></div>
             <div class="tc-zone" style="border-color:#1a3a6e;background:#0a1522"><div class="tc-zi" style="background:#2ec4b6"></div><span class="tc-zn">Aduana · DIAN</span><span class="tc-zs">Inspección</span></div>
           </div>
-          <div class="tc-docks">${Array.from({length:12},(_,i)=>`<div class="dk" style="background:#0d2040;color:#4a9eff;border-color:#1a3a6e">D${i+1}</div>`).join('')}${Array.from({length:6},()=>`<div class="dk" style="background:#0a1522;color:var(--text3)">·</div>`).join('')}</div>
+          <div class="tc-docks" id="docks-tc1"></div>
         </div>
         <div class="tc-card" style="border-color:#0F6E56">
           <div class="tc-hd" style="background:#0a1f14;border-color:#133322"><div class="tc-title" style="color:#3dba7e">TC2</div><div class="tc-sub" style="color:#1D9E75">Internacional · 23.624 m²</div><div style="font-size:8px;color:#0F6E56;margin-top:2px;font-family:'IBM Plex Mono',monospace">Avianca Cargo · LATAM · Lufthansa · Cargolux</div></div>
@@ -327,7 +327,7 @@ select.prop-inp option{background:var(--bg3)}
             <div class="tc-zone" style="border-color:#04342C;background:#020f09"><div class="tc-zi" style="background:#04342C;border:1px solid #5DCAA5"></div><span class="tc-zn" style="color:var(--text3)">Cuartos fríos</span><span class="tc-zs">Farma·Flores</span></div>
             <div class="tc-zone" style="border-color:#133322;background:#06150d"><div class="tc-zi" style="background:#8b6fff"></div><span class="tc-zn">Avianca Hub</span><span class="tc-zs">e-freight</span></div>
           </div>
-          <div class="tc-docks">${Array.from({length:10},(_,i)=>`<div class="dk" style="background:#0a1f14;color:#3dba7e;border-color:#133322">D${i+1}</div>`).join('')}${Array.from({length:8},()=>`<div class="dk" style="background:#06150d;color:var(--text3)">·</div>`).join('')}</div>
+          <div class="tc-docks" id="docks-tc2"></div>
         </div>
         <div class="tc-card" style="border-color:#854F0B">
           <div class="tc-hd" style="background:#1f1400;border-color:#3d2a00"><div class="tc-title" style="color:#f5a623">TC3</div><div class="tc-sub" style="color:#BA7517">Nacional · Especial · 18.129 m²</div><div style="font-size:8px;color:#854F0B;margin-top:2px;font-family:'IBM Plex Mono',monospace">Searca · TransAero · DG · Perecederos</div></div>
@@ -337,7 +337,7 @@ select.prop-inp option{background:var(--bg3)}
             <div class="tc-zone" style="border-color:#3d2a00;background:#140d00"><div class="tc-zi" style="background:#e05555"></div><span class="tc-zn">Perecederos</span><span class="tc-zs">Flores·Alim.</span></div>
             <div class="tc-zone" style="border-color:#3d2a00;background:#140d00"><div class="tc-zi" style="background:#6b7698"></div><span class="tc-zn">Almacén general</span><span class="tc-zs">Buffer</span></div>
           </div>
-          <div class="tc-docks">${Array.from({length:8},(_,i)=>`<div class="dk" style="background:#1f1400;color:#f5a623;border-color:#3d2a00">D${i+1}</div>`).join('')}${Array.from({length:10},()=>`<div class="dk" style="background:#140d00;color:var(--text3)">·</div>`).join('')}</div>
+          <div class="tc-docks" id="docks-tc3"></div>
         </div>
       </div>
 
@@ -349,7 +349,7 @@ select.prop-inp option{background:var(--bg3)}
 
       <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;margin-bottom:8px">
         <span style="font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:var(--text2)">CAC — Centro Administrativo · 6.328 m²</span>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">${['OPAIN','Aerocivil','DIAN','Control Tower ACCS','Forwarders','Aerolíneas'].map(z=>`<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:var(--bg4);border:1px solid var(--border2);color:var(--text3)">${z}</span>`).join('')}</div>
+        <div id="cac-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px"></div>
       </div>
 
       <div style="background:var(--amber-bg);border:1px solid var(--amber-dim);border-radius:var(--radius);padding:7px 12px">
@@ -989,33 +989,62 @@ function initLayout(){
 
 function injectDefaultNodes(){
   const mk=(type,label,x,y,w,h)=>({id:Date.now()+Math.random(),type,label,x,y,w,h,ct:'',actType:'',waste:[],notes:''});
-  // Screening / Pesaje / Inspección (zona roja x:0 y:170 w:340 h:220)
-  layoutNodes.push(mk('screening',  'X-Ray',             8,  178, 324, 34));
-  layoutNodes.push(mk('pesaje',     'Báscula',           8,  218, 324, 34));
-  layoutNodes.push(mk('inspeccion', 'DIAN · Inspección', 8,  258, 324, 34));
-  layoutNodes.push(mk('inspeccion', 'Aforo',             8,  298, 324, 34));
-  // Recepción documental (zona azul x:350 y:170 w:340 h:220)
-  layoutNodes.push(mk('awb',          'AWB / Manifiesto', 358, 178, 324, 34));
-  layoutNodes.push(mk('edocket',      'e-Docket',         358, 218, 324, 34));
-  layoutNodes.push(mk('pod',          'POD · EDI',        358, 258, 324, 34));
-  layoutNodes.push(mk('prevalidacion','Prevalidación',    358, 298, 324, 34));
-  // Almacenamiento (zona verde x:700 y:170 w:340 h:220)
-  layoutNodes.push(mk('almacenamiento','Bodega general',    708, 178, 324, 34));
-  layoutNodes.push(mk('almacenamiento','Cuartos fríos',     708, 218, 324, 34));
-  layoutNodes.push(mk('paletizacion', 'Paletización / ULD',708, 258, 324, 34));
-  layoutNodes.push(mk('gen_fisico',   'Buffer / Tránsito', 708, 298, 324, 34));
-  // Carga especial (zona ámbar x:1050 y:170 w:340 h:220)
-  layoutNodes.push(mk('gen_fisico',   'DG / Peligrosa',    1058,178, 324, 34));
-  layoutNodes.push(mk('gen_fisico',   'OOG · Valuables',   1058,218, 324, 34));
-  layoutNodes.push(mk('descargue',    'Perecederos / Flores',1058,258,324, 34));
-  layoutNodes.push(mk('gen_fisico',   'Farmacéuticos',     1058,298, 324, 34));
-  // GoPass + Puertas (zona inferior)
-  layoutNodes.push(mk('gopass_in',  'GoPass RFID · Entrada TC1', 82,  588, 150, 40));
-  layoutNodes.push(mk('gopass_in',  'GoPass RFID · Entrada TC2', 552, 588, 150, 40));
-  layoutNodes.push(mk('gopass_in',  'GoPass RFID · Entrada TC3', 1022,588, 150, 40));
-  layoutNodes.push(mk('lpr',        'Cámara LPR · TC1',          248, 588, 90,  40));
-  layoutNodes.push(mk('lpr',        'Cámara LPR · TC2',          718, 588, 90,  40));
-  layoutNodes.push(mk('lpr',        'Cámara LPR · TC3',          1188,588, 90,  40));
+
+  // ── MUELLES docking (zona morada y:82 h:80) ──
+  const muelleW=22, muelleH=46, muelleY=90;
+  for(let i=0;i<56;i++) layoutNodes.push(mk('docking','D'+(i+1), 8+i*muelleW, muelleY, muelleW-2, muelleH));
+
+  // ── SCREENING / INSPECCIÓN (zona roja x:0 y:170) ──
+  layoutNodes.push(mk('screening',   'X-Ray',             8,   178, 324, 40));
+  layoutNodes.push(mk('pesaje',      'Báscula',           8,   224, 324, 40));
+  layoutNodes.push(mk('inspeccion',  'DIAN · Inspección', 8,   270, 324, 40));
+  layoutNodes.push(mk('inspeccion',  'Aforo',             8,   316, 324, 40));
+
+  // ── RECEPCIÓN DOCUMENTAL (zona azul x:350 y:170) ──
+  layoutNodes.push(mk('awb',           'AWB / Manifiesto', 358, 178, 324, 40));
+  layoutNodes.push(mk('edocket',       'e-Docket',         358, 224, 324, 40));
+  layoutNodes.push(mk('pod',           'POD · EDI',        358, 270, 324, 40));
+  layoutNodes.push(mk('prevalidacion', 'Prevalidación',    358, 316, 324, 40));
+
+  // ── ALMACENAMIENTO (zona verde x:700 y:170) ──
+  layoutNodes.push(mk('almacenamiento','Bodega general',     708, 178, 324, 40));
+  layoutNodes.push(mk('almacenamiento','Cuartos fríos',      708, 224, 324, 40));
+  layoutNodes.push(mk('paletizacion',  'Paletización / ULD', 708, 270, 324, 40));
+  layoutNodes.push(mk('gen_fisico',    'Buffer / Tránsito',  708, 316, 324, 40));
+
+  // ── CARGA ESPECIAL (zona ámbar x:1050 y:170) ──
+  layoutNodes.push(mk('gen_fisico',  'DG / Peligrosa',      1058,178, 324, 40));
+  layoutNodes.push(mk('gen_fisico',  'OOG · Valuables',     1058,224, 324, 40));
+  layoutNodes.push(mk('descargue',   'Perecederos / Flores',1058,270, 324, 40));
+  layoutNodes.push(mk('gen_fisico',  'Farmacéuticos',       1058,316, 324, 40));
+
+  // ── PARKING / COLA VEHICULAR (zona y:398 h:90) ──
+  for(let i=0;i<14;i++) layoutNodes.push(mk('llegada','Camión #'+(i+1), 14+i*94, 410, 88, 52));
+
+  // ── CAC: entidades ──
+  const cacEnt=[['OPAIN',0],['Aerocivil',1],['DIAN',2],['Control Tower ACCS',3],['Forwarders',4],['Aerolíneas',5]];
+  cacEnt.forEach(([label,i])=>layoutNodes.push(mk('tps',label, 6+i*232, 500, 226, 26)));
+
+  // ── PUERTAS TC1 / TC2 / TC3 ──
+  layoutNodes.push(mk('barrera',       'PUERTA TC1 · 24/7',  80,  582, 160, 56));
+  layoutNodes.push(mk('barrera',       'PUERTA TC2 · 24/7',  550, 582, 160, 56));
+  layoutNodes.push(mk('barrera',       'PUERTA TC3 · 24/7',  1020,582, 160, 56));
+
+  // ── GOPASS RFID lectores ──
+  layoutNodes.push(mk('gopass_in',  'GoPass TAG IN · TC1',  248, 582, 130, 26));
+  layoutNodes.push(mk('gopass_out', 'GoPass TAG OUT · TC1', 248, 612, 130, 26));
+  layoutNodes.push(mk('gopass_in',  'GoPass TAG IN · TC2',  718, 582, 130, 26));
+  layoutNodes.push(mk('gopass_out', 'GoPass TAG OUT · TC2', 718, 612, 130, 26));
+  layoutNodes.push(mk('gopass_in',  'GoPass TAG IN · TC3',  1188,582, 130, 26));
+  layoutNodes.push(mk('gopass_out', 'GoPass TAG OUT · TC3', 1188,612, 130, 26));
+
+  // ── CÁMARAS LPR ──
+  layoutNodes.push(mk('lpr','Cámara LPR · TC1', 82,  644, 90, 24));
+  layoutNodes.push(mk('lpr','Cámara LPR · TC2', 552, 644, 90, 24));
+  layoutNodes.push(mk('lpr','Cámara LPR · TC3', 1022,644, 90, 24));
+
+  // ── AVIONES airside ──
+  for(let i=0;i<5;i++) layoutNodes.push(mk('cargue','Posición aeronave #'+(i+1), 60+i*270, 2, 130, 32));
 }
 
 function renderLayout(){
@@ -1034,85 +1063,19 @@ function drawLayoutBg(){
     LCX.fillStyle=z.text;LCX.font='600 10px IBM Plex Mono,monospace';LCX.textAlign='left';
     LCX.fillText(z.label,z.x+8,z.y+14,z.w-14);
     if(z.sub&&z.h>50){LCX.font='400 8.5px sans-serif';LCX.fillStyle=z.text+'88';LCX.fillText(z.sub,z.x+8,z.y+28,z.w-14);}
-
-    /* muelles: zona única ancha */
-    if(z.id==='docks_all'){
-      const cols=Math.floor((z.w-16)/24);
-      for(let i=0;i<Math.min(cols,56);i++){
-        const dx=z.x+8+i*24,dy=z.y+36;
-        LCX.fillStyle='#2a1a5e';LCX.strokeStyle='#534AB7';LCX.lineWidth=0.5;
-        lcRR(dx,dy,20,32,3);LCX.fill();LCX.stroke();
-        LCX.fillStyle='#8b6fff';LCX.font='500 6px IBM Plex Mono,monospace';LCX.textAlign='center';
-        LCX.fillText('D'+(i+1),dx+10,dy+13);
-        /* camión en algunos muelles */
-        if(i%3===0){
-          LCX.fillStyle='#1e2330';lcRR(dx+1,dy+15,18,15,2);LCX.fill();
-          LCX.fillStyle='#3d4560';LCX.fillRect(dx+2,dy+16,11,8);
-          LCX.fillStyle='#252a38';LCX.fillRect(dx+13,dy+18,5,6);
-        }
-      }
-    }
-
-    /* parking: camiones en cola */
-    if(z.id==='park_cola'){
-      /* carril de cola con camiones */
-      for(let i=0;i<16;i++){
-        const px=z.x+14+i*84,py=z.y+22;
-        LCX.fillStyle='#1e2330';LCX.strokeStyle='#3d4560';LCX.lineWidth=0.5;
-        lcRR(px,py,76,40,4);LCX.fill();LCX.stroke();
-        drawTruck(px+4,py+7,68,26);
-        LCX.fillStyle='#4d5670';LCX.font='6px IBM Plex Mono,monospace';LCX.textAlign='center';
-        LCX.fillText('#'+(i+1),px+38,py+50);
-      }
-      /* flechas de flujo cola */
-      LCX.strokeStyle='#f5a623';LCX.lineWidth=1.5;LCX.setLineDash([6,4]);
-      LCX.beginPath();LCX.moveTo(z.x+8,z.y+68);LCX.lineTo(z.x+z.w-8,z.y+68);LCX.stroke();
-      LCX.setLineDash([]);
-      LCX.fillStyle='#f5a623';
-      for(let ax=z.x+120;ax<z.x+z.w-8;ax+=200){
-        LCX.beginPath();LCX.moveTo(ax,z.y+62);LCX.lineTo(ax+14,z.y+68);LCX.lineTo(ax,z.y+74);LCX.closePath();LCX.fill();
-      }
-      LCX.fillStyle='#f5a623';LCX.font='500 8px IBM Plex Mono,monospace';LCX.textAlign='right';
-      LCX.fillText('FLUJO COLA →',z.x+z.w-12,z.y+82);
-    }
-
-    /* puertas */
-    if(z.id.startsWith('gate')){
-      LCX.fillStyle='#e05555';LCX.font='700 9px IBM Plex Mono,monospace';LCX.textAlign='center';
-      LCX.fillText('◉ '+z.label,z.x+z.w/2,z.y+16);
-      const subs={gate1:'Token · GoPass · LPR',gate2:'Slot req · QR · DIAN',gate3:'DG checklist · OOG'};
-      LCX.font='400 8px sans-serif';LCX.fillStyle='#a32d2d';
-      LCX.fillText(subs[z.id]||'',z.x+z.w/2,z.y+29);LCX.fillText('24/7',z.x+z.w/2,z.y+44);
-    }
-
-    /* airside: aviones */
-    if(z.id==='airside'){for(let i=0;i<5;i++)drawPlane(70+i*270,18);}
-
-    /* calle 26 */
     if(z.id==='calle26'){
       LCX.strokeStyle='#f5a623';LCX.lineWidth=1;LCX.setLineDash([8,6]);
       LCX.beginPath();LCX.moveTo(20,556);LCX.lineTo(1380,556);LCX.stroke();LCX.setLineDash([]);
       for(let x=80;x<1380;x+=110){LCX.fillStyle='#f5a623';LCX.font='10px sans-serif';LCX.textAlign='center';LCX.fillText('→',x,562);}
     }
   });
-
-  /* separadores verticales entre zonas ops */
+  // separadores verticales entre zonas ops
   LCX.setLineDash([4,3]);LCX.strokeStyle='#2e3448';LCX.lineWidth=0.5;
   [350,700,1050].forEach(x=>{LCX.beginPath();LCX.moveTo(x,170);LCX.lineTo(x,390);LCX.stroke();});
   LCX.setLineDash([]);
-
-  /* GoPass readers + LPR en puertas */
-  drawGopass(82,582,'TAG IN','#8b6fff');
-  drawGopass(190,582,'TAG OUT','#3dba7e');
-  drawGopass(552,582,'TAG IN','#8b6fff');
-  drawGopass(660,582,'TAG OUT','#3dba7e');
-  drawGopass(1022,582,'TAG IN','#8b6fff');
-  drawGopass(1130,582,'TAG OUT','#3dba7e');
-  drawLPR(250,585);drawLPR(722,585);drawLPR(1192,585);
-
-  /* etiqueta de ayuda */
+  // hint
   LCX.fillStyle='#4a9eff';LCX.font='500 9px IBM Plex Mono,monospace';LCX.textAlign='left';
-  LCX.fillText('← Arrastra nodos del sidebar a la zona del proceso correspondiente',10,650);
+  LCX.fillText('← Clic derecho en cualquier elemento para eliminarlo',10,652);
 }
 
 function drawTruck(x,y,w,h){
@@ -1305,6 +1268,29 @@ function exportHTML(){
 }
 
 /* ─── INIT ─── */
+// Populate mapa terminal dynamic elements
+(function(){
+  const d1=document.getElementById('docks-tc1');
+  const d2=document.getElementById('docks-tc2');
+  const d3=document.getElementById('docks-tc3');
+  const cac=document.getElementById('cac-tags');
+  if(d1){
+    d1.innerHTML=Array.from({length:12},(_,i)=>`<div class="dk" style="background:#0d2040;color:#4a9eff;border-color:#1a3a6e">D${i+1}</div>`).join('')+
+                 Array.from({length:6},()=>`<div class="dk" style="background:#0a1522;color:var(--text3)">·</div>`).join('');
+  }
+  if(d2){
+    d2.innerHTML=Array.from({length:10},(_,i)=>`<div class="dk" style="background:#0a1f14;color:#3dba7e;border-color:#133322">D${i+1}</div>`).join('')+
+                 Array.from({length:8},()=>`<div class="dk" style="background:#06150d;color:var(--text3)">·</div>`).join('');
+  }
+  if(d3){
+    d3.innerHTML=Array.from({length:8},(_,i)=>`<div class="dk" style="background:#1f1400;color:#f5a623;border-color:#3d2a00">D${i+1}</div>`).join('')+
+                 Array.from({length:10},()=>`<div class="dk" style="background:#140d00;color:var(--text3)">·</div>`).join('');
+  }
+  if(cac){
+    cac.innerHTML=['OPAIN','Aerocivil','DIAN','Control Tower ACCS','Forwarders','Aerolíneas']
+      .map(z=>`<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:var(--bg4);border:1px solid var(--border2);color:var(--text3)">${z}</span>`).join('');
+  }
+})();
 const saved=localStorage.getItem('vsm_accs_v5');
 if(saved){try{const d=JSON.parse(saved);nodes=d.nodes||[];connections=d.connections||[];wasteActive=d.wasteActive||[];layoutNodes=d.layoutNodes||[];layoutConns=d.layoutConns||[];document.getElementById('notes-area').value=d.notes||'';document.querySelectorAll('.waste-tag').forEach(el=>{el.classList.toggle('on',wasteActive.includes(el.dataset.w));});}catch(e){}}
 render();
