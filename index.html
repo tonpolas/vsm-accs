@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VSM As-Is — ACCS Aeropuerto de Carga El Dorado</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundle.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
@@ -136,6 +137,7 @@ select.prop-inp option{background:var(--bg3)}
   <button class="tb-btn" onclick="loadTemplate()">Plantilla As-Is</button>
   <button class="tb-btn success" onclick="saveData()">Guardar</button>
   <button class="tb-btn success" onclick="exportHTML()">Exportar HTML</button>
+  <button class="tb-btn" style="border-color:#ff7052;color:#ff7052" onclick="exportPPTX()">⬇ Exportar PPTX</button>
   <button class="tb-btn danger" onclick="clearAll()">Limpiar</button>
   <span class="save-ind" id="save-ind">sin cambios</span>
 </div>
@@ -422,6 +424,7 @@ select.prop-inp option{background:var(--bg3)}
         <button class="act-btn green" onclick="loadTemplate()">Plantilla As-Is</button>
         <button class="act-btn blue" onclick="saveData()">Guardar sesión</button>
         <button class="act-btn green" onclick="exportHTML()">Exportar HTML</button>
+        <button class="act-btn green" onclick="exportPPTX()">⬇ Exportar PPTX</button>
         <button class="act-btn mute" onclick="clearAll()">Limpiar canvas</button>
       </div>
     </div>
@@ -1265,6 +1268,258 @@ function exportHTML(){
   const esc=state.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
   const html=document.documentElement.outerHTML.replace('</body>',`<script>window.addEventListener('DOMContentLoaded',()=>{const d=JSON.parse(\`${esc}\`);nodes=d.nodes;connections=d.connections;wasteActive=d.wasteActive||[];layoutNodes=d.layoutNodes||[];layoutConns=d.layoutConns||[];document.getElementById('notes-area').value=d.notes||'';document.querySelectorAll('.waste-tag').forEach(el=>{el.classList.toggle('on',wasteActive.includes(el.dataset.w));});render();});<\/script></body>`);
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='vsm_accs_asis_'+new Date().toISOString().slice(0,10)+'.html';a.click();
+}
+
+/* ─── EXPORT PPTX ─── */
+async function exportPPTX(){
+  if(typeof PptxGenJS==='undefined'){alert('pptxgenjs no cargó. Verifica conexión a internet.');return;}
+  const btn=document.querySelector('[onclick="exportPPTX()"]');
+  if(btn){btn.textContent='Generando...';btn.disabled=true;}
+
+  const notesVal=document.getElementById('notes-area')?document.getElementById('notes-area').value:'';
+  const fecha=new Date().toLocaleDateString('es-CO');
+  const version='1.0';
+  const cliente='Aeropuerto El Dorado — Bogotá';
+
+  // KPIs
+  const ctNodes=nodes.filter(n=>n.ct&&parseFloat(n.ct)>0);
+  const vaNodes=ctNodes.filter(n=>n.actType==='va');
+  const nvaNodes=ctNodes.filter(n=>n.actType==='nva');
+  const nvamNodes=ctNodes.filter(n=>n.actType==='nvam');
+  const lt=ctNodes.reduce((a,n)=>a+parseFloat(n.ct),0);
+  const vt=vaNodes.reduce((a,n)=>a+parseFloat(n.ct),0);
+  const eff=lt>0?Math.round(vt/lt*100):0;
+  const wc=nodes.reduce((a,n)=>(n.waste?a+n.waste.length:a),0)+wasteActive.length;
+  const nodePages=nodes.length>0?Math.ceil(nodes.length/6):0;
+  const totalSlides=6+nodePages+2;
+
+  // Palette
+  const P={
+    navy:'0D2461',navy2:'0A1A4A',orange:'E8431A',blue:'1C6EC8',
+    white:'FFFFFF',gray:'F4F6FA',gray2:'E2E8F0',text:'1A2340',text2:'4A5578',
+    va:'22A06B',nva:'E05555',nvam:'F5A623',teal:'028090'
+  };
+  const W=13.3,H=7.5;
+  const pres=new PptxGenJS();
+  pres.layout='LAYOUT_WIDE';
+  pres.author='Kalé Logistics Solutions';
+  pres.title=`VSM As-Is — ${cliente}`;
+
+  function hdr(s,title){
+    s.addShape('rect',{x:0,y:0,w:W,h:H,fill:{color:P.white}});
+    s.addShape('rect',{x:0,y:0,w:W,h:0.72,fill:{color:P.navy}});
+    s.addShape('diamond',{x:0.32,y:0.18,w:0.34,h:0.34,fill:{color:P.orange},line:{color:P.orange}});
+    s.addShape('diamond',{x:0.43,y:0.29,w:0.13,h:0.13,fill:{color:P.navy},line:{color:P.navy}});
+    s.addText('KALÉ',{x:0.78,y:0.16,w:1.8,h:0.4,fontSize:17,bold:true,color:P.white,fontFace:'Calibri',margin:0});
+    s.addText(title,{x:2.8,y:0.16,w:W-3,h:0.4,fontSize:18,bold:true,color:P.white,fontFace:'Calibri',align:'right',margin:0});
+  }
+  function ftr(s,num){
+    s.addShape('rect',{x:0,y:H-0.34,w:W,h:0.34,fill:{color:P.navy}});
+    s.addText('Kalé Logistics Solutions — ACCS El Dorado',{x:0.4,y:H-0.31,w:9,h:0.26,fontSize:8,color:'7898BC',fontFace:'Calibri'});
+    if(num) s.addText(`${num} / ${totalSlides}`,{x:W-1.1,y:H-0.31,w:0.9,h:0.26,fontSize:8,color:'7898BC',fontFace:'Calibri',align:'right'});
+    s.addShape('rect',{x:W-0.38,y:H-0.34,w:0.38,h:0.34,fill:{color:P.orange}});
+  }
+  function deco(s){
+    s.addShape('ellipse',{x:7.8,y:-3.2,w:8.5,h:8.5,fill:{color:P.navy2},line:{color:P.navy2,width:0}});
+    s.addShape('ellipse',{x:8.6,y:-2.5,w:7,h:7,fill:{color:'FFFFFF',transparency:96},line:{color:'FFFFFF',transparency:94,width:0}});
+  }
+  function logo(s){
+    s.addShape('diamond',{x:0.48,y:0.32,w:0.52,h:0.52,fill:{color:P.orange},line:{color:P.orange}});
+    s.addShape('diamond',{x:0.64,y:0.48,w:0.2,h:0.2,fill:{color:P.navy},line:{color:P.navy}});
+    s.addText('KALÉ',{x:1.1,y:0.3,w:2.4,h:0.52,fontSize:26,bold:true,color:P.white,fontFace:'Calibri',margin:0});
+  }
+
+  // ── SLIDE 1: PORTADA ──
+  {const s=pres.addSlide();
+  s.addShape('rect',{x:0,y:0,w:W,h:H,fill:{color:P.navy}});
+  deco(s);logo(s);
+  s.addText('Value Stream Map',{x:0.8,y:2.1,w:10,h:1.0,fontSize:44,bold:true,color:P.white,fontFace:'Calibri',margin:0});
+  s.addText('Estado Actual (As-Is)',{x:0.8,y:3.1,w:9,h:0.6,fontSize:26,color:P.orange,fontFace:'Calibri',margin:0});
+  s.addText(cliente,{x:0.8,y:3.85,w:9,h:0.42,fontSize:15,color:'AABBD0',fontFace:'Calibri',margin:0});
+  s.addText(`Versión ${version}   ·   ${fecha}`,{x:0.8,y:4.35,w:9,h:0.3,fontSize:11,color:'7898BC',fontFace:'Calibri',margin:0});
+  s.addShape('rect',{x:0,y:H-0.34,w:W,h:0.34,fill:{color:P.navy2}});
+  s.addShape('rect',{x:W-0.38,y:H-0.34,w:0.38,h:0.34,fill:{color:P.orange}});
+  s.addText('One Intelligent Platform. One Logistics Community',{x:0.5,y:H-0.31,w:W-1,h:0.26,fontSize:9,color:'7898BC',fontFace:'Calibri'});}
+
+  // ── SLIDE 2: RESUMEN EJECUTIVO ──
+  {const s=pres.addSlide();
+  hdr(s,'Resumen Ejecutivo');
+  const kpis=[
+    {val:lt?lt.toFixed(0)+'m':'N/D',label:'Lead Time Total',color:P.navy},
+    {val:vt?vt.toFixed(0)+'m':'N/D',label:'Tiempo Valor Agregado',color:P.va},
+    {val:lt?eff+'%':'N/D',label:'Eficiencia del proceso',color:eff>=50?P.va:P.nva},
+    {val:nodes.length,label:'Actividades mapeadas',color:P.blue},
+    {val:wc,label:'Wastes identificados',color:P.nva},
+  ];
+  const kW=2.3,kY=0.9,kH=1.45,gap=0.2,tot5=5*kW+4*gap,sx=(W-tot5)/2;
+  kpis.forEach((k,i)=>{
+    const x=sx+i*(kW+gap);
+    s.addShape('roundRect',{x,y:kY,w:kW,h:kH,rectRadius:0.1,fill:{color:P.gray},line:{color:k.color,width:2}});
+    s.addText(String(k.val),{x,y:kY+0.12,w:kW,h:0.72,fontSize:36,bold:true,color:k.color,fontFace:'Calibri',align:'center',margin:0});
+    s.addText(k.label,{x:x+0.1,y:kY+0.86,w:kW-0.2,h:0.5,fontSize:9,color:P.text2,fontFace:'Calibri',align:'center',wrap:true,margin:0});
+  });
+  if(lt>0){
+    const bY=2.55,bH=0.3,bX=0.8,bW=W-1.6;
+    s.addText('Distribución del Lead Time',{x:bX,y:bY-0.26,w:bW,h:0.22,fontSize:10,bold:true,color:P.text,fontFace:'Calibri',margin:0});
+    const vaP=vt/lt,nvP=nvaNodes.reduce((a,n)=>a+parseFloat(n.ct),0)/lt,nmP=nvamNodes.reduce((a,n)=>a+parseFloat(n.ct),0)/lt;
+    s.addShape('roundRect',{x:bX,y:bY,w:Math.max(bW*vaP,0.05),h:bH,rectRadius:0.05,fill:{color:P.va},line:{color:P.va}});
+    s.addShape('rect',{x:bX+bW*vaP,y:bY,w:Math.max(bW*nvP,0.05),h:bH,fill:{color:P.nva},line:{color:P.nva}});
+    s.addShape('roundRect',{x:bX+bW*(vaP+nvP),y:bY,w:Math.max(bW*nmP,0.05),h:bH,rectRadius:0.05,fill:{color:P.nvam},line:{color:P.nvam}});
+    [[P.va,'VA — Agrega valor'],[P.nva,'NVA — No agrega valor'],[P.nvam,'NVA-N — Necesaria']].forEach(([c,l],i)=>{
+      s.addShape('rect',{x:bX+i*3.5,y:bY+0.4,w:0.18,h:0.14,fill:{color:c},line:{color:c}});
+      s.addText(l,{x:bX+i*3.5+0.24,y:bY+0.38,w:3,h:0.18,fontSize:9,color:P.text2,fontFace:'Calibri',margin:0});
+    });
+  }
+  if(notesVal){
+    s.addShape('roundRect',{x:0.8,y:3.35,w:W-1.6,h:1.7,rectRadius:0.08,fill:{color:'EFF4FF'},line:{color:P.blue,width:1}});
+    s.addText('Notas del consultor',{x:1.0,y:3.44,w:4,h:0.28,fontSize:10,bold:true,color:P.blue,fontFace:'Calibri',margin:0});
+    s.addText(notesVal.substring(0,420)+(notesVal.length>420?'...':''),{x:1.0,y:3.74,w:W-2,h:1.2,fontSize:9,color:P.text2,fontFace:'Calibri',wrap:true,margin:0});
+  }
+  ftr(s,2);}
+
+  // ── SLIDE 3: STAKEHOLDERS ──
+  {const s=pres.addSlide();
+  hdr(s,'Actores del Proceso');
+  const shs=[
+    {name:'Freight Forwarder',alias:'FFWD',role:'Coordina transporte, gestiona AWBs, reserva slots y asigna Trucker para entrega en terminal.',color:'4A9EFF'},
+    {name:'Trucker',alias:'Transportador',role:'Ejecuta el transporte físico. Solicita token GoPass, gestiona slots asignados y realiza el docking.',color:'F5A623'},
+    {name:'GHA',alias:'Ground Handler',role:'Opera la terminal de carga. Recepción, pesaje, screening, almacenamiento y paletización.',color:'3DBA7E'},
+    {name:'Airline',alias:'Carrier',role:'Emite AWBs, gestiona reservas de capacidad, manifiestos y coordina iniciativas e-freight.',color:'8B6FFF'},
+    {name:'Aeropuerto (TPS)',alias:'TPS User',role:'Administra la plataforma ACCS. Gestiona slots, turnos, acceso vehicular y visibilidad operativa.',color:'FF7052'},
+    {name:'Aduana / CB',alias:'Customs · Regulador',role:'Ejecuta inspecciones, verifica documentación y libera la carga. Incluye DIAN y cámara de comercio.',color:'2EC4B6'},
+  ];
+  const cW=3.8,cH=2.15,gX=0.3,gY=0.28,cols=3;
+  const tW=cols*cW+(cols-1)*gX,sX=(W-tW)/2;
+  shs.forEach((st,i)=>{
+    const col=i%cols,row=Math.floor(i/cols);
+    const x=sX+col*(cW+gX),y=0.88+row*(cH+gY);
+    s.addShape('roundRect',{x,y,w:cW,h:cH,rectRadius:0.1,fill:{color:P.gray},line:{color:st.color,width:1.5}});
+    s.addShape('ellipse',{x:x+0.14,y:y+0.14,w:0.36,h:0.36,fill:{color:st.color},line:{color:st.color}});
+    s.addText(st.name,{x:x+0.6,y:y+0.12,w:cW-0.72,h:0.3,fontSize:11,bold:true,color:P.text,fontFace:'Calibri',margin:0});
+    s.addText(st.alias,{x:x+0.6,y:y+0.42,w:cW-0.72,h:0.2,fontSize:8,color:st.color,fontFace:'Calibri',margin:0});
+    s.addShape('line',{x:x+0.14,y:y+0.72,w:cW-0.28,h:0,line:{color:st.color,width:0.5,dashType:'dash'}});
+    s.addText(st.role,{x:x+0.14,y:y+0.82,w:cW-0.28,h:1.2,fontSize:9,color:P.text2,fontFace:'Calibri',wrap:true,margin:0});
+  });
+  ftr(s,3);}
+
+  // ── SLIDE 4: DIAGRAMA VSM (canvas image) ──
+  {const s=pres.addSlide();
+  hdr(s,'Diagrama VSM — Estado Actual');
+  try{
+    const dataURL=canvas.toDataURL('image/png');
+    s.addImage({data:dataURL,x:0.4,y:0.82,w:W-0.8,h:H-1.4});
+  }catch(e){
+    s.addShape('roundRect',{x:0.5,y:0.88,w:W-1,h:H-1.55,rectRadius:0.1,fill:{color:P.gray},line:{color:P.gray2,width:1}});
+    s.addText('Diagrama VSM — Canvas vacío',{x:2,y:3.0,w:W-4,h:0.6,fontSize:20,bold:true,color:P.text2,fontFace:'Calibri',align:'center',margin:0});
+    s.addText('Agrega nodos al VSM Canvas antes de exportar',{x:2,y:3.7,w:W-4,h:0.4,fontSize:11,color:P.text2,fontFace:'Calibri',align:'center',margin:0});
+  }
+  [[P.va,'VA'],[P.nva,'NVA'],[P.nvam,'NVA-N']].forEach(([c,l],i)=>{
+    s.addShape('rect',{x:0.5+i*1.8,y:H-1.05,w:0.16,h:0.13,fill:{color:c},line:{color:c}});
+    s.addText(l,{x:0.72+i*1.8,y:H-1.08,w:1.5,h:0.18,fontSize:8,color:P.text2,fontFace:'Calibri',margin:0});
+  });
+  ftr(s,4);}
+
+  // ── SLIDE 5: DIVIDER ──
+  {const s=pres.addSlide();
+  s.addShape('rect',{x:0,y:0,w:W,h:H,fill:{color:P.navy}});
+  deco(s);logo(s);
+  s.addText('Detalle de',{x:0.8,y:2.8,w:9,h:0.75,fontSize:40,color:P.white,fontFace:'Calibri',margin:0});
+  s.addText('Actividades',{x:0.8,y:3.5,w:9,h:0.75,fontSize:40,bold:true,color:P.orange,fontFace:'Calibri',margin:0});
+  s.addText(`${nodes.length} actividades mapeadas en el VSM As-Is`,{x:0.8,y:4.38,w:8,h:0.34,fontSize:13,color:'AABBD0',fontFace:'Calibri',margin:0});
+  s.addShape('rect',{x:0,y:H-0.34,w:W,h:0.34,fill:{color:P.navy2}});
+  s.addShape('rect',{x:W-0.38,y:H-0.34,w:0.38,h:0.34,fill:{color:P.orange}});}
+
+  // ── SLIDES 6..N: DETALLE NODOS (6 por página) ──
+  if(nodes.length>0){
+    const perPage=6;
+    const pages=Math.ceil(nodes.length/perPage);
+    for(let p=0;p<pages;p++){
+      const s=pres.addSlide();
+      hdr(s,`Actividades — Página ${p+1} de ${pages}`);
+      const slice=nodes.slice(p*perPage,(p+1)*perPage);
+      const cW=4.0,cH=1.6,gX=0.25,gY=0.22,cols=3;
+      const tW=cols*cW+(cols-1)*gX,sX=(W-tW)/2;
+      slice.forEach((n,i)=>{
+        const col=i%cols,row=Math.floor(i/cols);
+        const x=sX+col*(cW+gX),y=0.82+row*(cH+gY);
+        const ac={'va':P.va,'nva':P.nva,'nvam':P.nvam}[n.actType||'']||P.blue;
+        s.addShape('roundRect',{x,y,w:cW,h:cH,rectRadius:0.08,fill:{color:P.gray},line:{color:ac,width:1.5}});
+        s.addShape('roundRect',{x,y,w:cW,h:0.05,rectRadius:0.04,fill:{color:ac},line:{color:ac}});
+        s.addText(n.label||'Sin etiqueta',{x:x+0.1,y:y+0.07,w:cW-0.2,h:0.3,fontSize:11,bold:true,color:P.text,fontFace:'Calibri',margin:0});
+        if(n.actType){
+          const tg={va:'VA',nva:'NVA',nvam:'NVA-N'}[n.actType];
+          s.addShape('roundRect',{x:x+0.1,y:y+0.4,w:0.44,h:0.19,rectRadius:0.04,fill:{color:ac},line:{color:ac}});
+          s.addText(tg,{x:x+0.1,y:y+0.4,w:0.44,h:0.19,fontSize:7,bold:true,color:P.white,fontFace:'Calibri',align:'center',margin:0});
+        }
+        if(n.ct) s.addText(`CT: ${n.ct}min`,{x:x+0.6,y:y+0.42,w:1.5,h:0.17,fontSize:8,color:P.text2,fontFace:'Calibri',margin:0});
+        if(n.inAcCS){
+          s.addShape('roundRect',{x:x+cW-0.72,y:y+0.4,w:0.62,h:0.19,rectRadius:0.04,fill:{color:'DBEAFE'},line:{color:P.blue,width:0.5}});
+          s.addText('ACCS',{x:x+cW-0.72,y:y+0.4,w:0.62,h:0.19,fontSize:7,bold:true,color:P.blue,fontFace:'Calibri',align:'center',margin:0});
+        }
+        if(n.sysType) s.addText(n.sysType,{x:x+0.1,y:y+0.62,w:cW-0.2,h:0.17,fontSize:8,color:P.teal,fontFace:'Calibri',italic:true,margin:0});
+        const nt=n.notes?n.notes.substring(0,100)+(n.notes.length>100?'...':''):'—';
+        s.addText(nt,{x:x+0.1,y:y+0.82,w:cW-0.2,h:0.55,fontSize:8,color:P.text2,fontFace:'Calibri',wrap:true,margin:0});
+        if(n.waste&&n.waste.length){
+          n.waste.slice(0,3).forEach((w,wi)=>{
+            s.addShape('roundRect',{x:x+0.1+wi*1.26,y:y+cH-0.27,w:1.2,h:0.19,rectRadius:0.04,fill:{color:'FCE8E8'},line:{color:P.nva,width:0.5}});
+            s.addText(w.split('·').pop()||w,{x:x+0.1+wi*1.26,y:y+cH-0.27,w:1.2,h:0.19,fontSize:7,color:P.nva,fontFace:'Calibri',align:'center',margin:0});
+          });
+        }
+      });
+      ftr(s,5+p+1);
+    }
+  }
+
+  // ── SLIDE WASTE TIMWOOD ──
+  {const s=pres.addSlide();
+  hdr(s,'Waste Identificado — TIMWOOD');
+  const wDef={
+    'T·Transporte':['Transporte','Movimiento innecesario de información o materiales'],
+    'I·Inventario':['Inventario','Acumulación de documentos, esperas o carga sin procesar'],
+    'M·Movimiento':['Movimiento','Desplazamiento innecesario de personas u operadores'],
+    'W·Espera':['Espera','Tiempo muerto entre actividades, cola de camiones'],
+    'O·Sobreprod.':['Sobreproducción','Procesar más de lo requerido por el siguiente paso'],
+    'O·Sobroprc.':['Sobreproceso','Pasos innecesarios, re-trabajos, doble captura de datos'],
+    'D·Defectos':['Defectos','Errores en documentación, rechazos, reprocesos'],
+  };
+  const allW=new Set([...wasteActive]);
+  nodes.forEach(n=>(n.waste||[]).forEach(w=>allW.add(w)));
+  const wKeys=Object.keys(wDef);
+  const wW=3.7,wH=0.88,gX=0.22,cols=3;
+  const tW2=cols*wW+(cols-1)*gX,sX2=(W-tW2)/2;
+  wKeys.forEach((key,i)=>{
+    const isOn=allW.has(key)||[...allW].some(w=>key.includes(w.split('·')[1]||'')||w.includes(key.split('·')[1]||''));
+    const col=i%cols,row=Math.floor(i/cols);
+    const x=sX2+col*(wW+gX),y=0.85+row*(wH+gY);
+    s.addShape('roundRect',{x,y,w:wW,h:wH,rectRadius:0.08,fill:{color:isOn?'FCE8E8':P.gray},line:{color:isOn?P.nva:P.gray2,width:isOn?2:1}});
+    s.addText(key.charAt(0),{x:x+0.1,y:y+0.1,w:0.4,h:0.55,fontSize:28,bold:true,color:isOn?P.nva:P.text2,fontFace:'Calibri',margin:0});
+    s.addText(wDef[key][0],{x:x+0.58,y:y+0.1,w:wW-0.7,h:0.3,fontSize:11,bold:true,color:isOn?P.nva:P.text,fontFace:'Calibri',margin:0});
+    s.addText(wDef[key][1],{x:x+0.58,y:y+0.44,w:wW-0.7,h:0.36,fontSize:8,color:P.text2,fontFace:'Calibri',wrap:true,margin:0});
+    if(isOn) s.addShape('ellipse',{x:x+wW-0.26,y:y+0.1,w:0.16,h:0.16,fill:{color:P.nva},line:{color:P.nva}});
+  });
+  ftr(s,totalSlides-1);}
+
+  // ── SLIDE CIERRE ──
+  {const s=pres.addSlide();
+  s.addShape('rect',{x:0,y:0,w:W,h:H,fill:{color:P.navy}});
+  deco(s);logo(s);
+  s.addText('Próximos pasos',{x:0.8,y:2.2,w:9,h:0.78,fontSize:36,bold:true,color:P.white,fontFace:'Calibri',margin:0});
+  ['1.  Validar el mapa As-Is con los stakeholders del proceso',
+   '2.  Identificar y priorizar oportunidades de mejora (Kaizen)',
+   '3.  Diseñar el estado futuro To-Be del proceso',
+   '4.  Definir plan de implementación y métricas de seguimiento',
+  ].forEach((st,i)=>{
+    s.addText(st,{x:0.8,y:3.1+i*0.46,w:9,h:0.38,fontSize:13,color:'CADCFC',fontFace:'Calibri',margin:0});
+  });
+  s.addText(`Versión ${version}  ·  ${fecha}  ·  ${cliente}`,{x:0.8,y:5.55,w:9,h:0.28,fontSize:9,color:'7898BC',fontFace:'Calibri',margin:0});
+  s.addShape('rect',{x:0,y:H-0.34,w:W,h:0.34,fill:{color:P.navy2}});
+  s.addText('One Intelligent Platform. One Logistics Community',{x:0.5,y:H-0.31,w:W-1,h:0.26,fontSize:9,color:'7898BC',fontFace:'Calibri'});
+  s.addShape('rect',{x:W-0.38,y:H-0.34,w:0.38,h:0.34,fill:{color:P.orange}});}
+
+  // Guardar
+  const fname=`VSM_AsIs_ACCS_${new Date().toISOString().slice(0,10)}.pptx`;
+  await pres.writeFile({fileName:fname});
+  if(btn){btn.textContent='⬇ Exportar PPTX';btn.disabled=false;}
 }
 
 /* ─── INIT ─── */
